@@ -18,7 +18,18 @@ export function VesselCombobox({ vesselId, vesselName, onSelect }: VesselCombobo
   const createVessel = useCreateVessel();
 
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onBlur={(e) => {
+        // Only close when focus leaves the whole widget, not when it moves
+        // from the search input to something else inside it (a result, the
+        // "add new vessel" button, or one of the inline add-vessel fields).
+        // relatedTarget is null for e.g. a click that doesn't focus anything.
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setOpen(false);
+        }
+      }}
+    >
       <input
         type="text"
         className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
@@ -29,7 +40,6 @@ export function VesselCombobox({ vesselId, vesselName, onSelect }: VesselCombobo
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
       />
       {vesselId != null && (
         <p className="mt-1 text-xs text-emerald-700">Selected: {vesselName}</p>
@@ -109,7 +119,7 @@ function AddVesselInline({
   const createVessel = useCreateVessel();
 
   return (
-    <div className="space-y-2" onMouseDown={(e) => e.stopPropagation()}>
+    <div className="space-y-2">
       <input
         className="w-full rounded border border-slate-300 px-2 py-1 text-sm"
         placeholder="Vessel name"
