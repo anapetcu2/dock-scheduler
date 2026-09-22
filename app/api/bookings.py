@@ -1,5 +1,6 @@
 import csv
 import io
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi import status as http_status
@@ -70,8 +71,8 @@ def _to_read(booking: Booking) -> BookingRead:
 
 @router.get("", operation_id="list_bookings", response_model=list[BookingRead])
 def list_bookings(
-    start: str | None = None,
-    end: str | None = None,
+    start: date | None = None,
+    end: date | None = None,
     berth_id: int | None = None,
     vessel_id: int | None = None,
     kind: BookingKind | None = None,
@@ -103,8 +104,8 @@ def list_bookings(
 
 @router.get("/export.csv", operation_id="export_bookings_csv")
 def export_bookings_csv(
-    start: str | None = None,
-    end: str | None = None,
+    start: date | None = None,
+    end: date | None = None,
     berth_id: int | None = None,
     vessel_id: int | None = None,
     kind: BookingKind | None = None,

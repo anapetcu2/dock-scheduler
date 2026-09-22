@@ -309,6 +309,44 @@ class TestDeleteBooking:
 
 
 class TestListAndGetBooking:
+    def test_list_bookings_filters_by_date_range(
+        self, client, make_berth, make_vessel, make_user, auth_headers
+    ):
+        # Regression test: start/end were once typed as `str` in the route
+        # signature, so SQLAlchemy bound them as VARCHAR against the `date`
+        # columns and Postgres rejected the comparison with a 500 at the DB
+        # level. FastAPI must parse them as `date` so the comparison is
+        # date >= date, not date >= varchar.
+        berth = make_berth(length_ft=100)
+        vessel = make_vessel(loa_ft=50)
+        user = make_user(role=UserRole.staff)
+
+        client.post(
+            "/api/bookings",
+            json={
+                "berth_id": berth.id,
+                "kind": "vessel",
+                "vessel_id": vessel.id,
+                "status": "confirmed",
+                **_dates(10, 15),
+            },
+            headers=auth_headers(user),
+        )
+
+        in_range = client.get(
+            "/api/bookings",
+            params={"start": _dates(10, 15)["start_date"], "end": _dates(10, 15)["end_date"]},
+        )
+        assert in_range.status_code == 200
+        assert len(in_range.json()) == 1
+
+        out_of_range = client.get(
+            "/api/bookings",
+            params={"start": _dates(100, 105)["start_date"], "end": _dates(100, 105)["end_date"]},
+        )
+        assert out_of_range.status_code == 200
+        assert out_of_range.json() == []
+
     def test_list_bookings_filters_by_berth(
         self, client, make_berth, make_vessel, make_user, auth_headers
     ):
