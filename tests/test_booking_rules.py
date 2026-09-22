@@ -203,6 +203,102 @@ class TestOverlap:
         assert not any(issue.code == "OVERLAP" for issue in result.errors)
 
 
+class TestVesselDoubleBooking:
+    """A vessel can't be in two places at once, even if the two berths
+    involved are each individually free for those dates."""
+
+    def test_same_vessel_overlapping_dates_on_different_berth_rejected(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        _add_booking(db_session, berth=make_berth(), vessel=vessel, start=d(1), end=d(10))
+
+        result = validate_booking(
+            db_session,
+            _proposal(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=d(5),
+                end_date=d(15),
+            ),
+        )
+
+        assert not result.ok
+        assert any(issue.code == "VESSEL_DOUBLE_BOOKED" for issue in result.errors)
+
+    def test_same_vessel_same_berth_overlap_is_reported_as_overlap_not_double_booked(
+        self, db_session, make_berth, make_vessel
+    ):
+        """A same-berth clash is already OVERLAP; VESSEL_DOUBLE_BOOKED is
+        specifically for the cross-berth case, so it shouldn't also fire
+        here and duplicate the message."""
+        berth = make_berth()
+        vessel = make_vessel()
+        _add_booking(db_session, berth=berth, vessel=vessel, start=d(1), end=d(10))
+
+        result = validate_booking(
+            db_session,
+            _proposal(berth_id=berth.id, vessel_id=vessel.id, start_date=d(5), end_date=d(15)),
+        )
+
+        assert any(issue.code == "OVERLAP" for issue in result.errors)
+        assert not any(issue.code == "VESSEL_DOUBLE_BOOKED" for issue in result.errors)
+
+    def test_same_vessel_non_overlapping_dates_on_different_berths_accepted(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        _add_booking(db_session, berth=make_berth(), vessel=vessel, start=d(1), end=d(10))
+
+        result = validate_booking(
+            db_session,
+            _proposal(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=d(11),
+                end_date=d(20),
+            ),
+        )
+
+        assert not any(issue.code == "VESSEL_DOUBLE_BOOKED" for issue in result.errors)
+
+    def test_editing_a_booking_does_not_conflict_with_itself_across_berths(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        booking = _add_booking(db_session, berth=make_berth(), vessel=vessel, start=d(1), end=d(10))
+
+        result = validate_booking(
+            db_session,
+            _proposal(
+                berth_id=booking.berth_id, vessel_id=vessel.id, start_date=d(2), end_date=d(9)
+            ),
+            exclude_booking_id=booking.id,
+        )
+
+        assert not any(issue.code == "VESSEL_DOUBLE_BOOKED" for issue in result.errors)
+
+    def test_cancelled_vessel_booking_does_not_block(self, db_session, make_berth, make_vessel):
+        vessel = make_vessel()
+        _add_booking(
+            db_session,
+            berth=make_berth(),
+            vessel=vessel,
+            start=d(1),
+            end=d(10),
+            status=BookingStatus.cancelled,
+        )
+
+        result = validate_booking(
+            db_session,
+            _proposal(
+                berth_id=make_berth().id, vessel_id=vessel.id, start_date=d(3), end_date=d(7)
+            ),
+        )
+
+        assert not any(issue.code == "VESSEL_DOUBLE_BOOKED" for issue in result.errors)
+
+
 class TestFit:
     def test_too_long_vessel_rejected(self, db_session, make_berth, make_vessel):
         berth = make_berth(length_ft=75)

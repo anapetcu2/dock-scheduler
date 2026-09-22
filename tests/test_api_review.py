@@ -99,6 +99,41 @@ class TestIntegrityEndpoint:
         assert overlap_issues[0]["booking_id"] == legacy.id
         assert overlap_issues[0]["related_booking_id"] == confirmed.id
 
+    def test_legacy_conflict_pairs_with_its_vessel_double_booking_on_another_berth(
+        self, client, db_session, make_berth, make_vessel, make_user, auth_headers
+    ):
+        vessel = make_vessel(loa_ft=50)
+        confirmed = Booking(
+            berth_id=make_berth(length_ft=100).id,
+            kind=BookingKind.vessel,
+            vessel_id=vessel.id,
+            start_date=TODAY,
+            end_date=TODAY + timedelta(days=5),
+            status=BookingStatus.confirmed,
+            source=BookingSource.import_,
+        )
+        db_session.add(confirmed)
+        db_session.flush()
+        legacy = Booking(
+            berth_id=make_berth(length_ft=100).id,
+            kind=BookingKind.vessel,
+            vessel_id=vessel.id,
+            start_date=TODAY + timedelta(days=2),
+            end_date=TODAY + timedelta(days=7),
+            status=BookingStatus.legacy_conflict,
+            source=BookingSource.import_,
+        )
+        db_session.add(legacy)
+        db_session.flush()
+
+        user = make_user(role=UserRole.staff)
+        resp = client.get("/api/review/integrity", headers=auth_headers(user))
+        double_booked = [i for i in resp.json() if i["code"] == "VESSEL_DOUBLE_BOOKED"]
+        assert len(double_booked) == 1
+        assert double_booked[0]["booking_id"] == legacy.id
+        assert double_booked[0]["vessel_id"] == vessel.id
+        assert double_booked[0]["related_booking_id"] == confirmed.id
+
 
 class TestImportIssuesEndpoint:
     def test_requires_login(self, client):

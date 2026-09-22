@@ -17,7 +17,7 @@ from app.services.audit import record_audit_event
 from app.services.booking_rules import BookingProposal, validate_booking
 from app.services.exceptions import BookingConflictError, BookingValidationError
 
-OVERLAP_CONSTRAINT_NAME = "bookings_no_overlap"
+OVERLAP_CONSTRAINT_NAMES = ("bookings_no_overlap", "bookings_vessel_no_overlap")
 
 
 @dataclass(frozen=True)
@@ -65,7 +65,7 @@ def _snapshot(booking: Booking) -> dict[str, Any]:
 
 def _is_overlap_violation(exc: IntegrityError) -> bool:
     diag = getattr(exc.orig, "diag", None)
-    return getattr(diag, "constraint_name", None) == OVERLAP_CONSTRAINT_NAME
+    return getattr(diag, "constraint_name", None) in OVERLAP_CONSTRAINT_NAMES
 
 
 def _apply(booking: Booking, data: BookingInput) -> None:

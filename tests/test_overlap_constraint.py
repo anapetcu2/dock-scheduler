@@ -107,6 +107,111 @@ class TestExclusionConstraint:
         db_session.flush()  # must not raise
 
 
+class TestVesselExclusionConstraint:
+    """A vessel can't be in two places at once — bookings_vessel_no_overlap
+    mirrors bookings_no_overlap but keyed on vessel_id across berths."""
+
+    def test_same_vessel_overlapping_dates_on_different_berths_rejected_at_db_level(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+            )
+        )
+        db_session.flush()
+
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 5),
+                end_date=date(2026, 7, 15),
+            )
+        )
+        with pytest.raises(IntegrityError) as exc_info:
+            db_session.flush()
+
+        assert "bookings_vessel_no_overlap" in str(exc_info.value)
+
+    def test_same_vessel_non_overlapping_dates_on_different_berths_allowed(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+            )
+        )
+        db_session.flush()
+
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 11),
+                end_date=date(2026, 7, 20),
+            )
+        )
+        db_session.flush()  # adjacent, not overlapping — must not raise
+
+    def test_different_vessels_same_dates_on_different_berths_allowed(
+        self, db_session, make_berth, make_vessel
+    ):
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=make_vessel().id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+            )
+        )
+        db_session.flush()
+
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=make_vessel().id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+            )
+        )
+        db_session.flush()  # different vessels — must not raise
+
+    def test_cancelled_vessel_booking_does_not_trigger_exclusion(
+        self, db_session, make_berth, make_vessel
+    ):
+        vessel = make_vessel()
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+                status=BookingStatus.cancelled,
+            )
+        )
+        db_session.flush()
+
+        db_session.add(
+            _booking(
+                berth_id=make_berth().id,
+                vessel_id=vessel.id,
+                start_date=date(2026, 7, 1),
+                end_date=date(2026, 7, 10),
+                status=BookingStatus.confirmed,
+            )
+        )
+        db_session.flush()  # must not raise
+
+
 class TestCheckConstraints:
     def test_vessel_kind_requires_vessel_id(self, db_session, make_berth):
         berth = make_berth()

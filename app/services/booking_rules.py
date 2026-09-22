@@ -207,6 +207,37 @@ def validate_booking(
                 )
             )
 
+    # A vessel can't be in two places at once, so this mirrors the OVERLAP
+    # check above but keyed on vessel_id instead of berth_id, and across
+    # *different* berths specifically (a same-berth clash is already
+    # OVERLAP; reporting it again here would just duplicate the message).
+    if dates_valid and proposal.status in BLOCKING_STATUSES and proposal.vessel_id is not None:
+        vessel_overlap_expr = func.daterange(Booking.start_date, Booking.end_date, "[]").op("&&")(
+            func.daterange(proposal.start_date, proposal.end_date, "[]")
+        )
+        vessel_stmt = select(Booking).where(
+            Booking.vessel_id == proposal.vessel_id,
+            Booking.berth_id != proposal.berth_id,
+            Booking.status.in_(BLOCKING_STATUSES),
+            vessel_overlap_expr,
+        )
+        if exclude_booking_id is not None:
+            vessel_stmt = vessel_stmt.where(Booking.id != exclude_booking_id)
+
+        for conflict in session.scalars(vessel_stmt).all():
+            errors.append(
+                Issue(
+                    code="VESSEL_DOUBLE_BOOKED",
+                    message=(
+                        f'This vessel is already booked on "{conflict.berth.name}" '
+                        f"({_format_date_range(conflict.start_date, conflict.end_date)}), "
+                        f"booking #{conflict.id}."
+                    ),
+                    field="vessel_id",
+                    related_booking_id=conflict.id,
+                )
+            )
+
     if proposal.start_date < date.today():
         warnings.append(
             Issue(

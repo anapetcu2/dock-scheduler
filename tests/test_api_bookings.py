@@ -113,6 +113,43 @@ class TestCreateBooking:
         body = second.json()
         assert any(e["code"] == "OVERLAP" for e in body["errors"])
 
+    def test_same_vessel_at_two_berths_returns_422(
+        self, client, make_berth, make_vessel, make_user, auth_headers
+    ):
+        berth_a = make_berth(length_ft=100)
+        berth_b = make_berth(length_ft=100)
+        vessel = make_vessel(loa_ft=50)
+        user = make_user(role=UserRole.staff)
+
+        first = client.post(
+            "/api/bookings",
+            json={
+                "berth_id": berth_a.id,
+                "kind": "vessel",
+                "vessel_id": vessel.id,
+                "status": "confirmed",
+                **_dates(10, 15),
+            },
+            headers=auth_headers(user),
+        )
+        assert first.status_code == 201
+
+        second = client.post(
+            "/api/bookings",
+            json={
+                "berth_id": berth_b.id,
+                "kind": "vessel",
+                "vessel_id": vessel.id,
+                "status": "confirmed",
+                **_dates(12, 18),
+            },
+            headers=auth_headers(user),
+        )
+
+        assert second.status_code == 422
+        body = second.json()
+        assert any(e["code"] == "VESSEL_DOUBLE_BOOKED" for e in body["errors"])
+
 
 class TestUpdateAndCancelBooking:
     def test_update_booking_dates(self, client, make_berth, make_vessel, make_user, auth_headers):

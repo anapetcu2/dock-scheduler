@@ -98,7 +98,8 @@ def get_review_summary(
     )
 
     return ReviewSummary(
-        historical_double_bookings=counts.get("HISTORICAL_OVERLAP", 0),
+        historical_double_bookings=counts.get("HISTORICAL_OVERLAP", 0)
+        + counts.get("VESSEL_DOUBLE_BOOKED", 0),
         vessels_too_long=counts.get("VESSEL_TOO_LONG", 0),
         vessels_unknown_length=counts.get("VESSEL_LENGTH_UNKNOWN", 0),
         berths_unknown_length=counts.get("BERTH_LENGTH_UNKNOWN", 0),

@@ -120,4 +120,31 @@ def compute_integrity_issues(session: Session) -> list[IntegrityIssue]:
                 )
             )
 
+        # A vessel can't be in two places at once — the same overlap check
+        # as above, but keyed on vessel_id across *different* berths (a
+        # same-berth clash is already reported as HISTORICAL_OVERLAP).
+        if booking.vessel_id is not None:
+            vessel_others = session.scalars(
+                select(Booking).where(
+                    Booking.vessel_id == booking.vessel_id,
+                    Booking.berth_id != booking.berth_id,
+                    Booking.id != booking.id,
+                    Booking.status != BookingStatus.cancelled,
+                    overlap_expr,
+                )
+            ).all()
+            for other in vessel_others:
+                issues.append(
+                    IntegrityIssue(
+                        "VESSEL_DOUBLE_BOOKED",
+                        "warning",
+                        f"Booking #{booking.id} ({booking.start_date}–{booking.end_date}) "
+                        f'books the same vessel as #{other.id} on "{other.berth.name}" '
+                        f"({other.start_date}–{other.end_date}).",
+                        booking_id=booking.id,
+                        vessel_id=booking.vessel_id,
+                        related_booking_id=other.id,
+                    )
+                )
+
     return issues

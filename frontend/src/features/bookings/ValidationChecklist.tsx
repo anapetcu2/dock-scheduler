@@ -4,6 +4,10 @@ import type { ValidationIssue, ValidationResult } from "../../api/client";
 
 const OVERLAP_CODES = new Set(["OVERLAP"]);
 const FIT_CODES = new Set(["VESSEL_TOO_LONG", "VESSEL_LENGTH_UNKNOWN", "BERTH_LENGTH_UNKNOWN"]);
+const DOUBLE_BOOKED_CODES = new Set(["VESSEL_DOUBLE_BOOKED"]);
+// Every code that gets its own CheckRow, so leftover errors (MISSING_VESSEL,
+// INVALID_DATES, BERTH_INACTIVE, ...) still fall through to the generic list.
+const HANDLED_CODES = new Set([...OVERLAP_CODES, ...FIT_CODES, ...DOUBLE_BOOKED_CODES]);
 
 function CheckRow({ ok, label, issues }: { ok: boolean; label: string; issues: ValidationIssue[] }) {
   return (
@@ -46,8 +50,10 @@ export function ValidationChecklist({ result, isVessel, checking, onOpenConflict
 
   const overlapIssues = result.errors.filter((e) => OVERLAP_CODES.has(e.code));
   const fitIssues = result.errors.filter((e) => FIT_CODES.has(e.code));
-  const otherErrors = result.errors.filter(
-    (e) => !OVERLAP_CODES.has(e.code) && !FIT_CODES.has(e.code),
+  const doubleBookedIssues = result.errors.filter((e) => DOUBLE_BOOKED_CODES.has(e.code));
+  const otherErrors = result.errors.filter((e) => !HANDLED_CODES.has(e.code));
+  const conflictIssues = [...overlapIssues, ...doubleBookedIssues].filter(
+    (i) => i.related_booking_id != null,
   );
 
   return (
@@ -55,24 +61,29 @@ export function ValidationChecklist({ result, isVessel, checking, onOpenConflict
       <ul className="space-y-2">
         <CheckRow ok={overlapIssues.length === 0} label="Berth free for these dates" issues={overlapIssues} />
         {isVessel && (
-          <CheckRow ok={fitIssues.length === 0} label="Vessel fits the berth" issues={fitIssues} />
+          <>
+            <CheckRow ok={fitIssues.length === 0} label="Vessel fits the berth" issues={fitIssues} />
+            <CheckRow
+              ok={doubleBookedIssues.length === 0}
+              label="Vessel not already booked elsewhere"
+              issues={doubleBookedIssues}
+            />
+          </>
         )}
       </ul>
 
-      {overlapIssues.some((i) => i.related_booking_id != null) && (
-        <div className="text-xs">
-          {overlapIssues
-            .filter((i) => i.related_booking_id != null)
-            .map((i) => (
-              <button
-                key={i.related_booking_id}
-                type="button"
-                className="text-brand-400 underline hover:text-brand-300"
-                onClick={() => onOpenConflict(i.related_booking_id as number)}
-              >
-                View conflicting booking #{i.related_booking_id}
-              </button>
-            ))}
+      {conflictIssues.length > 0 && (
+        <div className="flex flex-col items-start gap-1 text-xs">
+          {conflictIssues.map((i) => (
+            <button
+              key={i.related_booking_id}
+              type="button"
+              className="text-brand-400 underline hover:text-brand-300"
+              onClick={() => onOpenConflict(i.related_booking_id as number)}
+            >
+              View conflicting booking #{i.related_booking_id}
+            </button>
+          ))}
         </div>
       )}
 
