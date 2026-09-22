@@ -29,9 +29,25 @@ def _get_or_404(db: Session, vessel_id: int) -> Vessel:
     return vessel
 
 
+def _booked_vessel_ids_since(cutoff: date):
+    """A subquery of vessel ids with at least one non-cancelled booking
+    ending on or after `cutoff` — used to split "recent" from "historical"
+    vessels on the list page, since importing 23 years of history makes
+    the plain vessel list unusably long otherwise."""
+    return select(Booking.vessel_id).where(
+        Booking.vessel_id.isnot(None),
+        Booking.status != BookingStatus.cancelled,
+        Booking.end_date >= cutoff,
+    )
+
+
 @router.get("", operation_id="list_vessels", response_model=list[VesselRead])
 def list_vessels(
-    q: str | None = None, include_inactive: bool = False, db: Session = Depends(get_db)
+    q: str | None = None,
+    include_inactive: bool = False,
+    used_since: date | None = None,
+    used_before: date | None = None,
+    db: Session = Depends(get_db),
 ) -> list[Vessel]:
     stmt = select(Vessel).order_by(Vessel.name.asc())
     if not include_inactive:
@@ -39,6 +55,10 @@ def list_vessels(
     if q:
         needle = f"%{q.strip().upper()}%"
         stmt = stmt.where(Vessel.normalized_key.ilike(needle) | Vessel.name.ilike(f"%{q}%"))
+    if used_since is not None:
+        stmt = stmt.where(Vessel.id.in_(_booked_vessel_ids_since(used_since)))
+    if used_before is not None:
+        stmt = stmt.where(Vessel.id.notin_(_booked_vessel_ids_since(used_before)))
     return db.scalars(stmt).all()
 
 

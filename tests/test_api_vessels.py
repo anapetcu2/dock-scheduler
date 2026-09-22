@@ -1,3 +1,6 @@
+from datetime import date, timedelta
+
+from app.models.bookings import Booking, BookingKind, BookingSource, BookingStatus
 from app.models.users import UserRole
 
 
@@ -62,3 +65,49 @@ class TestVesselSearch:
         assert body["contacts"] == []
         assert body["upcoming_bookings"] == []
         assert body["past_bookings"] == []
+
+
+class TestVesselRecencyFilter:
+    def test_used_since_only_returns_vessels_with_a_recent_booking(
+        self, client, db_session, make_berth, make_vessel
+    ):
+        berth = make_berth()
+        recent_vessel = make_vessel(name="Recent Boat")
+        old_vessel = make_vessel(name="Old Boat")
+        today = date.today()
+
+        db_session.add(
+            Booking(
+                berth_id=berth.id,
+                kind=BookingKind.vessel,
+                vessel_id=recent_vessel.id,
+                start_date=today - timedelta(days=5),
+                end_date=today - timedelta(days=1),
+                status=BookingStatus.confirmed,
+                source=BookingSource.app,
+            )
+        )
+        db_session.add(
+            Booking(
+                berth_id=berth.id,
+                kind=BookingKind.vessel,
+                vessel_id=old_vessel.id,
+                start_date=today - timedelta(days=3000),
+                end_date=today - timedelta(days=2995),
+                status=BookingStatus.confirmed,
+                source=BookingSource.import_,
+            )
+        )
+        db_session.flush()
+
+        cutoff = (today - timedelta(days=365 * 5)).isoformat()
+
+        recent_resp = client.get("/api/vessels", params={"used_since": cutoff})
+        recent_names = [v["name"] for v in recent_resp.json()]
+        assert "Recent Boat" in recent_names
+        assert "Old Boat" not in recent_names
+
+        historical_resp = client.get("/api/vessels", params={"used_before": cutoff})
+        historical_names = [v["name"] for v in historical_resp.json()]
+        assert "Old Boat" in historical_names
+        assert "Recent Boat" not in historical_names

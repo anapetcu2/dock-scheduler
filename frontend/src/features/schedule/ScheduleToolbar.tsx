@@ -5,7 +5,6 @@ import { Button } from "../../components/Button";
 const VIEW_LABELS: Record<ViewRange, string> = {
   "2w": "2 weeks",
   month: "Month",
-  "3m": "3 months",
 };
 
 interface ScheduleToolbarProps {

@@ -24,13 +24,27 @@ export function isVesselConflictDetail(detail: unknown): detail is VesselConflic
   );
 }
 
-export function useVessels(query: { q?: string; includeInactive?: boolean } = {}) {
+export interface VesselListQuery {
+  q?: string;
+  includeInactive?: boolean;
+  usedSince?: string;
+  usedBefore?: string;
+}
+
+export function useVessels(query: VesselListQuery = {}) {
   return useQuery({
     queryKey: ["vessels", query],
     queryFn: async () =>
       unwrap<Vessel[]>(
         await api.GET("/api/vessels", {
-          params: { query: { q: query.q, include_inactive: query.includeInactive } },
+          params: {
+            query: {
+              q: query.q,
+              include_inactive: query.includeInactive,
+              used_since: query.usedSince,
+              used_before: query.usedBefore,
+            },
+          },
         }),
       ),
   });

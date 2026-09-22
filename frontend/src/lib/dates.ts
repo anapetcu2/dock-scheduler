@@ -21,7 +21,7 @@ import {
   subMonths,
 } from "date-fns";
 
-export type ViewRange = "2w" | "month" | "3m";
+export type ViewRange = "2w" | "month";
 
 export function parseISODate(value: string): Date {
   const date = dateFnsParseISO(value);
@@ -113,17 +113,16 @@ export function formatDateRange(startValue: string, endValue: string): string {
 }
 
 /** Given any date in the view and a view size, returns the [start, end]
- * (inclusive) range to display. "month" and "3m" always snap to full
- * calendar months so month boundaries in the grid line up cleanly; "2w"
- * is a rolling two-week window starting on `anchorValue`. */
+ * (inclusive) range to display. "month" always snaps to the full calendar
+ * month so month boundaries in the grid line up cleanly; "2w" is a rolling
+ * two-week window starting on `anchorValue`. */
 export function viewRangeFor(view: ViewRange, anchorValue: string): { start: string; end: string } {
   const anchor = parseISODate(anchorValue);
   if (view === "2w") {
     return { start: toISODate(anchor), end: toISODate(addDays(anchor, 13)) };
   }
-  const monthsSpan = view === "month" ? 1 : 3;
   const start = startOfMonth(anchor);
-  const end = subDays(addMonths(start, monthsSpan), 1);
+  const end = subDays(addMonths(start, 1), 1);
   return { start: toISODate(start), end: toISODate(end) };
 }
 
@@ -134,8 +133,6 @@ export function shiftAnchor(view: ViewRange, anchorValue: string, direction: 1 |
   if (view === "2w") {
     return toISODate(addDays(anchor, direction * 14));
   }
-  const monthsSpan = view === "month" ? 1 : 3;
-  const shifted =
-    direction === 1 ? addMonths(anchor, monthsSpan) : subMonths(anchor, monthsSpan);
+  const shifted = direction === 1 ? addMonths(anchor, 1) : subMonths(anchor, 1);
   return toISODate(startOfMonth(shifted));
 }

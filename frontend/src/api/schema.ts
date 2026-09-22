@@ -1501,6 +1501,8 @@ export interface operations {
             query?: {
                 q?: string | null;
                 include_inactive?: boolean;
+                used_since?: string | null;
+                used_before?: string | null;
             };
             header?: never;
             path?: never;

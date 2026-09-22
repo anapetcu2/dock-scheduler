@@ -134,12 +134,6 @@ describe("viewRangeFor", () => {
     });
   });
 
-  it("3m spans three full calendar months from the anchor's month", () => {
-    expect(viewRangeFor("3m", "2024-01-20")).toEqual({
-      start: "2024-01-01",
-      end: "2024-03-31",
-    });
-  });
 });
 
 describe("shiftAnchor", () => {
@@ -151,9 +145,5 @@ describe("shiftAnchor", () => {
   it("moves a 2w view by 14 days", () => {
     expect(shiftAnchor("2w", "2024-06-10", 1)).toBe("2024-06-24");
     expect(shiftAnchor("2w", "2024-06-10", -1)).toBe("2024-05-27");
-  });
-
-  it("moves a 3m view by three months and snaps to month start", () => {
-    expect(shiftAnchor("3m", "2024-01-15", 1)).toBe("2024-04-01");
   });
 });

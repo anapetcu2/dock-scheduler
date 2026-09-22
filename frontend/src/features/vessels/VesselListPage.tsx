@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -6,10 +7,26 @@ import { useVessels } from "../../api/vessels";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { addDaysISO, todayISO } from "../../lib/dates";
+
+type Tab = "recent" | "historical";
+const RECENT_YEARS = 5;
 
 export function VesselListPage() {
   const [query, setQuery] = useState("");
-  const { data: vessels, isPending, isError, error } = useVessels({ q: query || undefined });
+  const [tab, setTab] = useState<Tab>("recent");
+  const cutoff = addDaysISO(todayISO(), -365 * RECENT_YEARS);
+
+  // A search looks across every vessel regardless of when it was last
+  // used; the recent/historical split only applies to the default browse
+  // view, where it exists purely to keep ~500 years of imported history
+  // from burying the vessels anyone actually books today.
+  const searching = query.trim() !== "";
+  const { data: vessels, isPending, isError, error } = useVessels({
+    q: searching ? query : undefined,
+    usedSince: !searching && tab === "recent" ? cutoff : undefined,
+    usedBefore: !searching && tab === "historical" ? cutoff : undefined,
+  });
   const { data: organizations } = useOrganizations();
   const orgName = (id: number | null) => organizations?.find((o) => o.id === id)?.name ?? "—";
 
@@ -26,9 +43,26 @@ export function VesselListPage() {
         />
       </div>
 
+      {!searching && (
+        <div className="mb-4 flex gap-1 border-b border-slate-200">
+          <TabButton active={tab === "recent"} onClick={() => setTab("recent")}>
+            Recent (last {RECENT_YEARS} years)
+          </TabButton>
+          <TabButton active={tab === "historical"} onClick={() => setTab("historical")}>
+            Historical
+          </TabButton>
+        </div>
+      )}
+
       {isPending && <LoadingState label="Loading vessels…" />}
       {isError && <ErrorState error={error} />}
-      {vessels && vessels.length === 0 && <EmptyState>No vessels found.</EmptyState>}
+      {vessels && vessels.length === 0 && (
+        <EmptyState>
+          {tab === "historical" && !searching
+            ? "No historical vessels found."
+            : "No vessels found."}
+        </EmptyState>
+      )}
       {vessels && vessels.length > 0 && (
         <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-md border border-slate-200 bg-white text-sm">
           <thead>
@@ -68,5 +102,27 @@ export function VesselListPage() {
         </table>
       )}
     </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border-b-2 px-3 py-2 text-sm font-medium ${
+        active ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-700"
+      }`}
+    >
+      {children}
+    </button>
   );
 }

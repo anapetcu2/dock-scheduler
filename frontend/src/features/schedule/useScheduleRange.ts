@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { type ViewRange, shiftAnchor, todayISO, viewRangeFor } from "../../lib/dates";
 
-const VALID_VIEWS: ViewRange[] = ["2w", "month", "3m"];
+const VALID_VIEWS: ViewRange[] = ["2w", "month"];
 
 /** Keeps the visible schedule range in the URL query string
  * (`?start=2019-06-01&view=month`), per SPEC.md section 9.1, so views are
