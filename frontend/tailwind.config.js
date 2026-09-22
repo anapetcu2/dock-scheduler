@@ -4,14 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: [
-          '"Plus Jakarta Sans"',
-          "ui-sans-serif",
-          "system-ui",
-          "-apple-system",
-          "sans-serif",
-        ],
-        mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
+        sans: ['"IBM Plex Sans"', "ui-sans-serif", "system-ui", "-apple-system", "sans-serif"],
+        mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       colors: {
         // Dark blue navy scale used for page/panel backgrounds and borders.
