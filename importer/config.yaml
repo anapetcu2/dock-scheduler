@@ -1,0 +1,103 @@
+# Values here come from profiling the real workbook (importer/profile.py),
+# not guesses — see DECISIONS.md, Phase 4, for how each list was derived.
+
+# A cell with one of these fills, and no text, is background (weekday/
+# weekend shading), not a booking cell. Any other fill means a booking cell
+# even with no text (a continuation of a run started by a named cell).
+# `type: none` matches a cell with no fill at all.
+background_fills:
+  - type: none
+  - type: theme
+    theme: 0
+    tint: 0.0
+  - type: theme
+    theme: 0
+    tint: -0.1499984740745262
+  - type: rgb
+    rgb: "FFD9D9D9"
+  - type: rgb
+    rgb: "FFFFFFFF"
+
+# Canonical vessel type prefixes and the aliases the workbook actually uses
+# for them. "OS/V" appears twice in the real data ("OS/V Golden Osprey",
+# "OS/V Silver Skua") — clearly the same prefix as "OSV" with a stray slash,
+# not a fourth vessel type.
+vessel_prefixes:
+  "R/V": ["R/V"]
+  "M/V": ["M/V"]
+  "F/V": ["F/V"]
+  "S/V": ["S/V"]
+  "M/Y": ["M/Y"]
+  "S/Y": ["S/Y"]
+  "Tug": ["Tug"]
+  "Barge": ["Barge"]
+  "OSV": ["OSV", "OS/V"]
+
+# Substring match, case-insensitive. Extends SPEC.md section 7.4's
+# illustrative list with two phrases found verbatim in the real data
+# ("Ultrasonic pier test", "Utility work on pier face") that describe dock
+# infrastructure work but don't contain any of the spec's example keywords.
+closure_keywords:
+  - "repair"
+  - "maintenance"
+  - "no docking"
+  - "no usage"
+  - "closed"
+  - "restricted"
+  - "rebuild"
+  - "crane access"
+  - "inspection"
+  - "concrete"
+  - "paving"
+  - "utility work"
+  - "bollard"
+  - "ultrasonic pier test"
+
+# Exact match (after trimming), case-insensitive — these are short
+# timestamps/status words, not free text, so substring matching would be
+# too eager (e.g. "ETA" inside a longer sentence). Extends SPEC.md section
+# 7.4's list with four verbatim phrases from the real data that are the
+# same kind of short operational note but aren't about arrival/departure
+# timing specifically.
+note_exact:
+  - "eta"
+  - "etd"
+  - "arrives"
+  - "arrival"
+  - "departs"
+  - "departure"
+  - "delayed due to weather"
+  - "touch and go"
+  - "load equipment"
+  - "provisioning"
+  - "water/slops pumping"
+  - "wire spooling"
+# note_prefix entries match "<prefix> <anything>", case-insensitive, for
+# notes that carry a variable suffix (a time, e.g. "ETA 1200", "Arrival
+# 1400", "Fueling @0800" — but "Fueling" alone is an event per SPEC.md
+# section 7.4's own example list, not a note).
+note_prefix:
+  - "eta"
+  - "etd"
+  - "arrives"
+  - "arrival"
+  - "departs"
+  - "departure"
+
+# Berths with no length in their column-A label (SPEC.md section 7.2).
+unlengthed_berths:
+  - "North Finger Piers:"
+  - "Small craft slips (institution boats)"
+
+# Names the 8YR Dock Summary tab uses for a berth that appears in the
+# grids under a different label. Empty for this workbook — both sides
+# agree on spelling once "North Finger Piers:" is stripped of its colon —
+# kept here so a real historical workbook can add aliases without a code
+# change.
+berth_aliases: {}
+
+# 8YR Dock Summary names this berth, but it never appears in any year
+# grid — SPEC.md section 7.2 says to record an info issue, not create a
+# berth for it.
+summary_only_berths:
+  - "Marsh Landing"

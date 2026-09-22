@@ -98,13 +98,47 @@ def export_openapi() -> None:
 
 @cli.command("import-workbook")
 @click.argument("path", type=click.Path(exists=True))
-@click.option("--dry-run", is_flag=True, default=False)
-@click.option("--reset", is_flag=True, default=False)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    default=False,
+    help="Parse and report without writing to the database.",
+)
+@click.option(
+    "--reset", is_flag=True, default=False, help="Wipe imported bookings and import issues first."
+)
 def import_workbook(path: str, dry_run: bool, reset: bool) -> None:
-    """Import the historical Excel workbook. Implemented in Phase 4."""
-    raise click.ClickException(
-        "The importer (importer/) hasn't been built yet — this is Phase 4 of SPEC.md."
-    )
+    """Import the historical Excel workbook (SPEC.md section 7)."""
+    from importer.load import run_import, scan_workbook
+    from importer.report import print_report
+    from importer.ruleset import load_config
+
+    config = load_config()
+
+    if dry_run:
+        stats = scan_workbook(path, config)
+        print_report(
+            stats,
+            summary={
+                "berths": "n/a",
+                "vessels": "n/a",
+                "bookings": len(stats.bookings),
+                "issues": len(stats.issues),
+            },
+        )
+        click.echo("\n(dry run: nothing written)")
+        return
+
+    session = _direct_session()
+    try:
+        stats, summary = run_import(session, path, reset=reset, config=config)
+        session.commit()
+        print_report(stats, summary)
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":
