@@ -55,3 +55,39 @@ Section 8.6 names the route `/api/bookings/export.csv?` with the same filters as
 ## Organization name uniqueness returns 409 on conflict, even though section 8.3 only spells this out for vessels
 
 `organizations.name` is `unique` in the data model (section 5) but section 8.3's 409-with-id behavior is described only for vessels. Letting a duplicate organization name reach the database and raise a raw `IntegrityError` would surface as an unhandled 500, which is worse than a clear 409, so `create_organization`/`update_organization` catch it. Unlike vessels, there's no normalized-key lookup to return an existing id (name uniqueness is exact, case-sensitive, at the DB level), so the 409 body is just a message.
+
+---
+
+## Phase 3 decisions
+
+## React 18 and React Router v6, pinned above the scaffold defaults; `openapi-fetch` added as the typed HTTP client
+
+`npm create vite@latest` (the tool used to scaffold `frontend/`) defaults to React 19 and Vite 8 today, but section 2 fixes React 18, so `package.json` was hand-written pinning `react`/`react-dom` to `^18.3.1` rather than accepting the scaffold's versions. Section 2 also says API types come from `openapi-typescript` but doesn't name a fetch layer; `openapi-fetch` (from the same maintainer, built specifically to consume `openapi-typescript`'s generated `paths` type) is added so every request is checked against the generated schema instead of hand-typed, in the spirit of "never hand-write API types."
+
+## `react-router-dom` pinned to `^6.30.6`, and a known open advisory in the v6 line is accepted
+
+`npm audit` flags GHSA-wrjc-x8rr-h8h6 (an open-redirect via a backslash in `<Link>`/`useNavigate`) as unfixed on any 6.x release — the fix only landed in 7.18.4. Section 2 fixes React Router v6, so upgrading to v7 to clear the advisory isn't an option here. Exposure is low regardless: every `<Link to=...>` and `navigate(...)` call in this app passes a literal, app-defined path (`/vessels/${id}`, `/berths`, etc.), never a value read from user input or an external redirect parameter, which is what the advisory requires to be exploitable. Noted here rather than silently ignored.
+
+## The API client's `unwrap()` takes a loose `{data?, error?, response}` shape instead of `openapi-fetch`'s exact `FetchResponse<...>` generic
+
+Typing `unwrap<T>` against `openapi-fetch`'s precise `FetchResponse<Op, Options, Media>` generic fought TypeScript's variance rules when called with an explicit `T` at each call site (list vs. detail vs. create all return different `Op` types). Since every call site already names the expected type explicitly (`unwrap<Booking[]>(...)`, `unwrap<Vessel>(...)`), the extra precision bought nothing; a structural `{data?: T; error?: unknown; response: Response}` parameter type accepts anything `openapi-fetch` returns and keeps the actual runtime check (`error !== undefined` -> throw) in one place.
+
+## Contacts and organizations get no dedicated pages in Phase 3
+
+Section 9's top nav (Schedule, Find a berth, Vessels, Berths, Reports, Data review) has no Contacts or Organizations entry, and section 11's Phase 3 "done when" doesn't mention them either — they only surface as read-only data on the vessel detail page (contacts list, organization name). A full CRUD UI for them isn't built until something in a later phase actually needs to create or edit one; today's write endpoints (`POST`/`PATCH /api/organizations`, `/api/contacts`) exist from Phase 2 but have no frontend caller yet.
+
+## "Find a berth that fits" link (booking form) and the Availability/Reports/Data review nav items are deferred to Phase 5
+
+Section 9.2 mentions a "Find a berth that fits" link next to the berth field, and section 9's nav lists Find a berth, Reports, and Data review — all backed by section 8.5–8.7 endpoints, which section 11 assigns to Phase 5 ("Review, find-a-berth UI, reports"). Building the link or nav entries now would point at pages that don't exist. The booking form and top nav only include what Phase 3 delivers (Schedule, Vessels, Berths, login); Phase 5 adds the rest.
+
+## Drag-to-select on an empty schedule cell uses mousedown/mouseenter/mouseup, not the HTML5 drag-and-drop API
+
+Section 9.1 asks for "click an empty cell (or drag across cells)" to open the booking form. HTML5 drag-and-drop (`draggable`, `dragstart`/`dragover`/`drop`) is built for moving/reordering elements between drop targets, not for painting a selection across a row of same-type cells, and it requires more ceremony (a `DataTransfer` payload, `preventDefault` on `dragover` to allow a drop) for no benefit here. Plain mouse events accumulate a `[dragStart, dragEnd]` ISO-date pair per berth row; releasing the mouse (or leaving the row) opens the booking form prefilled with that range, collapsing to a single day when `dragStart === dragEnd` (an ordinary click).
+
+## Booking bar continuation arrows and CSS-grid placement, not absolute positioning, per section 9.1's literal wording
+
+Section 9.1 says bars are "absolutely positioned... using `grid-column: start / span n`, clipped at the range edges with an arrow indicating they continue." Taken literally this mixes two layout models, so it's read as "positioned via CSS Grid placement" rather than `position: absolute`: each berth row is one CSS Grid container (`grid-template-columns` = one column per visible day), and both the empty-cell click targets and the booking bars are grid items placed with explicit `gridColumn`/`gridRow` — including bars sharing row space with lanes (see below) and empty-cell buttons spanning `1 / -1` underneath them. This gets the exact "start / span n" placement the spec describes without fighting Grid and absolute positioning against each other.
+
+## Overlapping bookings on the same berth (mainly `legacy_conflict` rows) stack via a greedy lane assignment, computed client-side
+
+Section 9.1: "since these overlap other bookings, stack overlapping bars within a row in sub-lanes so both are visible." The backend doesn't return a lane/sub-row number (nothing in section 8.4's `BookingRead` shape suggests it should — lane assignment is a rendering concern, not stored state, and would go stale the moment the visible date range changed). `features/schedule/laneAssignment.ts` sorts a berth's bookings by start date and greedily assigns each to the lowest sub-lane whose last occupant's end date is before its own start date, recomputed on every render from whatever bookings are currently in view.

@@ -1,0 +1,60 @@
+import { useState } from "react";
+
+import type { BerthCreateInput } from "../../api/berths";
+import { Button } from "../../components/Button";
+
+interface NewBerthRowProps {
+  onCancel: () => void;
+  onSave: (input: BerthCreateInput) => void;
+  saving: boolean;
+}
+
+export function NewBerthRow({ onCancel, onSave, saving }: NewBerthRowProps) {
+  const [name, setName] = useState("");
+  const [lengthFt, setLengthFt] = useState("");
+
+  return (
+    <tr className="border-t border-slate-100 bg-emerald-50/40">
+      <td className="px-3 py-2">
+        <input
+          autoFocus
+          placeholder="Berth name"
+          className="w-full rounded border border-slate-300 px-2 py-1"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </td>
+      <td className="px-3 py-2">
+        <input
+          type="number"
+          placeholder="Length"
+          className="w-24 rounded border border-slate-300 px-2 py-1"
+          value={lengthFt}
+          onChange={(e) => setLengthFt(e.target.value)}
+        />
+      </td>
+      <td className="px-3 py-2 text-slate-400">{"—"}</td>
+      <td className="px-3 py-2 text-slate-400">Yes</td>
+      <td className="px-3 py-2 text-slate-400">{"—"}</td>
+      <td className="whitespace-nowrap px-3 py-2 text-right">
+        <Button
+          variant="primary"
+          disabled={saving || name.trim() === ""}
+          onClick={() =>
+            onSave({
+              name: name.trim(),
+              length_ft: lengthFt === "" ? null : Number(lengthFt),
+              is_active: true,
+              sort_order: 0,
+            })
+          }
+        >
+          Save
+        </Button>
+        <Button variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </td>
+    </tr>
+  );
+}
