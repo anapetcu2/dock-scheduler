@@ -68,7 +68,7 @@ class TestVesselSearch:
 
 
 class TestVesselRecencyFilter:
-    def test_used_since_only_returns_vessels_with_a_recent_booking(
+    def test_recent_years_only_returns_vessels_with_a_recent_booking(
         self, client, db_session, make_berth, make_vessel
     ):
         berth = make_berth()
@@ -95,19 +95,68 @@ class TestVesselRecencyFilter:
                 start_date=today - timedelta(days=3000),
                 end_date=today - timedelta(days=2995),
                 status=BookingStatus.confirmed,
+                # app-sourced, not import_: this test is purely about the
+                # today-relative cutoff. The "recent within the imported
+                # data's own tail" dimension has its own test below, since
+                # mixing the two here would make "Old Boat" the single
+                # import-sourced booking and therefore trivially "recent
+                # relative to the latest import booking" (itself).
+                source=BookingSource.app,
+            )
+        )
+        db_session.flush()
+
+        recent_resp = client.get("/api/vessels", params={"recent_years": 2})
+        recent_names = [v["name"] for v in recent_resp.json()]
+        assert "Recent Boat" in recent_names
+        assert "Old Boat" not in recent_names
+
+        historical_resp = client.get(
+            "/api/vessels", params={"recent_years": 2, "historical": "true"}
+        )
+        historical_names = [v["name"] for v in historical_resp.json()]
+        assert "Old Boat" in historical_names
+        assert "Recent Boat" not in historical_names
+
+    def test_recent_cutoff_also_covers_the_tail_of_old_historical_data(
+        self, client, db_session, make_berth, make_vessel
+    ):
+        # Everything in this DB is old relative to *today*, but the
+        # cutoff should still track "recent relative to the dataset's own
+        # latest booking" so a historical import's tail end (its most
+        # recent couple of years) doesn't read as "historical" just
+        # because the app happens to be running years after the import's
+        # own date range ends.
+        berth = make_berth()
+        latest_vessel = make_vessel(name="Latest In Dataset")
+        earlier_vessel = make_vessel(name="Much Earlier")
+        anchor = date.today() - timedelta(days=3000)
+
+        db_session.add(
+            Booking(
+                berth_id=berth.id,
+                kind=BookingKind.vessel,
+                vessel_id=latest_vessel.id,
+                start_date=anchor,
+                end_date=anchor + timedelta(days=2),
+                status=BookingStatus.confirmed,
+                source=BookingSource.import_,
+            )
+        )
+        db_session.add(
+            Booking(
+                berth_id=berth.id,
+                kind=BookingKind.vessel,
+                vessel_id=earlier_vessel.id,
+                start_date=anchor - timedelta(days=365 * 10),
+                end_date=anchor - timedelta(days=365 * 10 - 2),
+                status=BookingStatus.confirmed,
                 source=BookingSource.import_,
             )
         )
         db_session.flush()
 
-        cutoff = (today - timedelta(days=365 * 5)).isoformat()
-
-        recent_resp = client.get("/api/vessels", params={"used_since": cutoff})
-        recent_names = [v["name"] for v in recent_resp.json()]
-        assert "Recent Boat" in recent_names
-        assert "Old Boat" not in recent_names
-
-        historical_resp = client.get("/api/vessels", params={"used_before": cutoff})
-        historical_names = [v["name"] for v in historical_resp.json()]
-        assert "Old Boat" in historical_names
-        assert "Recent Boat" not in historical_names
+        resp = client.get("/api/vessels", params={"recent_years": 2})
+        names = [v["name"] for v in resp.json()]
+        assert "Latest In Dataset" in names
+        assert "Much Earlier" not in names

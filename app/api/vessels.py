@@ -1,12 +1,12 @@
-from datetime import date
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_user
 from app.db import get_db
-from app.models.bookings import Booking, BookingStatus
+from app.models.bookings import Booking, BookingSource, BookingStatus
 from app.models.contacts import Contact
 from app.models.users import User
 from app.models.vessels import Vessel, VesselContact
@@ -41,12 +41,36 @@ def _booked_vessel_ids_since(cutoff: date):
     )
 
 
+def _recency_cutoff(db: Session, years: int) -> date:
+    """ "Recent" means within `years` of today, or within `years` of the
+    most recent booking in the *imported* historical data specifically
+    (source = import — the workbook), whichever cutoff is earlier.
+
+    Scoping the second half to imported bookings only (not every booking)
+    matters: once the app has any live app-created bookings at all, the
+    overall latest booking date drifts to "now" regardless of the import,
+    which would silently collapse this back to just the today-relative
+    cutoff. The point is to also treat a historical import's own tail end
+    (here, 2018-2019) as recent, independent of what's happening live.
+    """
+    now_cutoff = date.today() - timedelta(days=365 * years)
+    latest_import_booking = db.scalar(
+        select(func.max(Booking.end_date)).where(
+            Booking.source == BookingSource.import_, Booking.status != BookingStatus.cancelled
+        )
+    )
+    if latest_import_booking is None:
+        return now_cutoff
+    data_cutoff = latest_import_booking - timedelta(days=365 * years)
+    return min(now_cutoff, data_cutoff)
+
+
 @router.get("", operation_id="list_vessels", response_model=list[VesselRead])
 def list_vessels(
     q: str | None = None,
     include_inactive: bool = False,
-    used_since: date | None = None,
-    used_before: date | None = None,
+    recent_years: int | None = None,
+    historical: bool = False,
     db: Session = Depends(get_db),
 ) -> list[Vessel]:
     stmt = select(Vessel).order_by(Vessel.name.asc())
@@ -55,10 +79,10 @@ def list_vessels(
     if q:
         needle = f"%{q.strip().upper()}%"
         stmt = stmt.where(Vessel.normalized_key.ilike(needle) | Vessel.name.ilike(f"%{q}%"))
-    if used_since is not None:
-        stmt = stmt.where(Vessel.id.in_(_booked_vessel_ids_since(used_since)))
-    if used_before is not None:
-        stmt = stmt.where(Vessel.id.notin_(_booked_vessel_ids_since(used_before)))
+    if recent_years is not None:
+        cutoff = _recency_cutoff(db, recent_years)
+        booked_ids = _booked_vessel_ids_since(cutoff)
+        stmt = stmt.where(Vessel.id.notin_(booked_ids) if historical else Vessel.id.in_(booked_ids))
     return db.scalars(stmt).all()
 
 

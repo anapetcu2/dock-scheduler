@@ -7,7 +7,6 @@ import { useVessels } from "../../api/vessels";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
-import { addDaysISO, todayISO } from "../../lib/dates";
 
 type Tab = "recent" | "historical";
 const RECENT_YEARS = 2;
@@ -15,17 +14,19 @@ const RECENT_YEARS = 2;
 export function VesselListPage() {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("recent");
-  const cutoff = addDaysISO(todayISO(), -365 * RECENT_YEARS);
 
   // A search looks across every vessel regardless of when it was last
   // used; the recent/historical split only applies to the default browse
-  // view, where it exists purely to keep ~500 years of imported history
-  // from burying the vessels anyone actually books today.
+  // view, where it exists purely to keep decades of imported history
+  // from burying the vessels anyone actually books today. The cutoff
+  // itself is computed server-side (see useVessels) against both "today"
+  // and the dataset's own latest booking, so a historical import's tail
+  // end reads as recent too, not just live app activity.
   const searching = query.trim() !== "";
   const { data: vessels, isPending, isError, error } = useVessels({
     q: searching ? query : undefined,
-    usedSince: !searching && tab === "recent" ? cutoff : undefined,
-    usedBefore: !searching && tab === "historical" ? cutoff : undefined,
+    recentYears: searching ? undefined : RECENT_YEARS,
+    historical: !searching && tab === "historical",
   });
   const { data: organizations } = useOrganizations();
   const orgName = (id: number | null) => organizations?.find((o) => o.id === id)?.name ?? "—";
