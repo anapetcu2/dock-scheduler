@@ -1,7 +1,13 @@
 import { useState } from "react";
 
 import { ApiError } from "../../api/client";
-import { isVesselConflictDetail, useCreateVessel, useVessels } from "../../api/vessels";
+import {
+  isVesselConflictDetail,
+  useCreateVessel,
+  useUpdateVessel,
+  useVessel,
+  useVessels,
+} from "../../api/vessels";
 import { Button } from "../../components/Button";
 
 interface VesselComboboxProps {
@@ -16,6 +22,12 @@ export function VesselCombobox({ vesselId, vesselName, onSelect }: VesselCombobo
   const [adding, setAdding] = useState(false);
   const { data: vessels } = useVessels({ q: query.length >= 2 ? query : undefined });
   const createVessel = useCreateVessel();
+  // Refetched by id whenever a vessel is selected, regardless of where the
+  // selection came from (a search result, a freshly-created vessel, or an
+  // existing booking being edited) — this is what lets the "no length yet"
+  // prompt below stay accurate without threading loa_ft through every
+  // caller of onSelect.
+  const { data: selectedVessel } = useVessel(vesselId ?? undefined);
 
   return (
     <div
@@ -41,8 +53,10 @@ export function VesselCombobox({ vesselId, vesselName, onSelect }: VesselCombobo
         }}
         onFocus={() => setOpen(true)}
       />
-      {vesselId != null && (
-        <p className="mt-1 text-xs text-emerald-700">Selected: {vesselName}</p>
+      {vesselId != null && selectedVessel && selectedVessel.loa_ft == null ? (
+        <SetVesselLengthPrompt vesselId={vesselId} vesselName={vesselName} />
+      ) : (
+        vesselId != null && <p className="mt-1 text-xs text-emerald-700">Selected: {vesselName}</p>
       )}
 
       {open && (
@@ -100,6 +114,42 @@ export function VesselCombobox({ vesselId, vesselName, onSelect }: VesselCombobo
             A vessel with this name already exists (#{createVessel.error.detail.vessel_id}).
           </p>
         )}
+    </div>
+  );
+}
+
+/** Shown instead of "Selected: X" when the selected vessel has no LOA — a
+ * booking can't be saved until it does (VESSEL_LENGTH_UNKNOWN blocks it).
+ * This updates the *same* vessel via PATCH, unlike "+ Add new vessel"
+ * above, which always creates a new one. */
+function SetVesselLengthPrompt({ vesselId, vesselName }: { vesselId: number; vesselName: string | null }) {
+  const [loaFt, setLoaFt] = useState("");
+  const updateVessel = useUpdateVessel();
+
+  return (
+    <div className="mt-1 rounded-md border border-amber-300 bg-amber-50 p-2 text-xs">
+      <p className="mb-1.5 text-amber-800">
+        Selected: {vesselName} {"—"} no recorded length yet, needed before this booking can be saved.
+      </p>
+      <div className="flex items-center gap-2">
+        <input
+          type="number"
+          placeholder="LOA (ft)"
+          className="w-24 rounded border border-slate-300 px-2 py-1"
+          value={loaFt}
+          onChange={(e) => setLoaFt(e.target.value)}
+        />
+        <Button
+          variant="primary"
+          disabled={loaFt === "" || updateVessel.isPending}
+          onClick={() =>
+            updateVessel.mutate({ id: vesselId, input: { loa_ft: Number(loaFt) } })
+          }
+        >
+          Save length
+        </Button>
+      </div>
+      {updateVessel.isError && <p className="mt-1 text-red-600">Couldn't save that length.</p>}
     </div>
   );
 }
