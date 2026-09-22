@@ -1,8 +1,12 @@
 import { Route, Routes } from "react-router-dom";
 
 import { Nav } from "./components/Nav";
+import { RequireAuth } from "./components/RequireAuth";
 import { LoginPage } from "./features/auth/LoginPage";
+import { AvailabilityPage } from "./features/availability/AvailabilityPage";
 import { BerthsPage } from "./features/berths/BerthsPage";
+import { ReportsPage } from "./features/reports/ReportsPage";
+import { ReviewPage } from "./features/review/ReviewPage";
 import { SchedulePage } from "./features/schedule/SchedulePage";
 import { VesselDetailPage } from "./features/vessels/VesselDetailPage";
 import { VesselListPage } from "./features/vessels/VesselListPage";
@@ -18,6 +22,16 @@ export function App() {
           <Route path="/vessels" element={<VesselListPage />} />
           <Route path="/vessels/:vesselId" element={<VesselDetailPage />} />
           <Route path="/berths" element={<BerthsPage />} />
+          <Route path="/availability" element={<AvailabilityPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route
+            path="/review"
+            element={
+              <RequireAuth>
+                <ReviewPage />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -135,3 +135,23 @@ Section 7 requires `--reset` to make the command idempotent, and describes it as
 ## Importer tests build workbooks in memory instead of committing binary `.xlsx` fixture files
 
 Section 3's test layout lists `tests/importer/` fixtures against "small hand-built .xlsx fixtures." `tests/importer/builders.py` builds equivalent openpyxl `Workbook`/`Worksheet` objects directly in test code instead — every importer function only ever touches a `Worksheet`, which behaves identically whether it was just constructed or loaded from disk (`test_load.py`'s end-to-end tests do go through an actual save-to-disk-and-reload round trip via `tempfile`, so the disk-loading path itself is still covered). Readable, diffable, editable Python beat binary spreadsheet files for fixtures that exist purely to exercise specific parsing rules (a merged range, two adjacent names, etc.), with no loss of coverage.
+
+---
+
+## Phase 5 decisions
+
+## `GET /api/reports/utilization` has no auth dependency, even though section 8's blanket rule only names schedule/berths/vessels/availability as public
+
+Section 8's opening paragraph says "Read endpoints for the schedule, berths, vessels, and availability are public. Contacts, audit history, the review page, and all writes require login" — reports aren't mentioned on either side. Section 9's top nav lists Reports as a plain link, with no "(logged in only)" annotation (the only nav item to carry one is Data review), which is a concrete, later, more specific signal about intent than the earlier prose's silence. Utilization numbers also aren't sensitive in the way contacts or audit history are — they're an aggregate of the same booking dates the public schedule already shows. `/api/reports/utilization` and the frontend `/reports` route are both public; `/api/bookings/export.csv` was already public from Phase 2 for the same reason (section 8.4 lists it as a plain `GET`, no auth noted).
+
+## `IntegrityIssue` is a plain dataclass recomputed on every request, not persisted or cached
+
+Section 8.7 is explicit that this has to be computed live ("so fixing a vessel's length makes its issues disappear immediately"), which rules out anything that could go stale — a cache, a materialized view, or a stored table refreshed on a schedule. `services/integrity.py::compute_integrity_issues` runs two queries (active vessel bookings joined to vessel+berth; legacy_conflict bookings, each checked against everything else on its berth for a date-range overlap) every time the endpoint is hit. At the current data volume (~2000 bookings after the historical import) this is fast enough not to need memoizing; revisit if the review page ever feels slow.
+
+## `HISTORICAL_OVERLAP` integrity issues are found by re-running the overlap query per `legacy_conflict` booking, not by reusing `booking_rules.validate_booking`
+
+`validate_booking` is scoped to *proposals* — it takes a `BookingProposal` (kind, dates, berth, vessel/title) and doesn't take a `status`-aware "what does this existing row already conflict with" query. Building a proposal from an existing `legacy_conflict` booking just to re-derive what it overlaps would need to fight past `validate_booking`'s own logic (section 6's OVERLAP check explicitly skips proposals whose *own* status is `legacy_conflict`, per an earlier Phase 1 decision — exactly backwards from what section 8.7 wants here, which is to see what it overlaps, not to validate it as if it were a new save). A direct `daterange && daterange` query scoped to the same berth, excluding cancelled bookings and the row itself, is simpler and matches what section 8.7 actually asks for: "all `legacy_conflict` bookings with the booking each clashes with."
+
+## Utilization report clips each booking's days into whichever requested years it overlaps, rather than requiring a booking to start within the range
+
+A booking spanning `2021-12-30` to `2022-01-02` genuinely contributes 2 days to 2021's total and 2 days to 2022's — SPEC.md doesn't say this explicitly, but "days booked per berth per year" only means something if every day lands in exactly one year. `services/reports.py::compute_utilization` fetches every booking that *overlaps* `[year_from, year_to]` at all (not just ones starting inside it) and clips each one's date range against every calendar year it touches within that range, so a booking straddling `year_from`'s or `year_to`'s edge is still counted correctly for the portion inside the requested range.

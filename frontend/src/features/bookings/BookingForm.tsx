@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { Link } from "react-router-dom";
 
 import { type Berth } from "../../api/berths";
 import {
@@ -171,9 +172,23 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
       )}
 
       <div>
-        <label htmlFor="berth_id" className="mb-1 block text-sm font-medium text-slate-700">
-          Berth
-        </label>
+        <div className="mb-1 flex items-center justify-between">
+          <label htmlFor="berth_id" className="block text-sm font-medium text-slate-700">
+            Berth
+          </label>
+          <Link
+            to="/availability"
+            state={{
+              vesselId: values.kind === "vessel" ? vesselId : null,
+              vesselName: values.kind === "vessel" ? vesselName : null,
+              start: values.start_date,
+              end: values.end_date,
+            }}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Find a berth that fits
+          </Link>
+        </div>
         <select
           id="berth_id"
           className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"

@@ -320,6 +320,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/review/integrity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Integrity Issues */
+        get: operations["get_integrity_issues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review/import-issues": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Import Issues */
+        get: operations["list_import_issues"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review/import-issues/{issue_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Import Issue */
+        post: operations["resolve_import_issue"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Summary */
+        get: operations["get_review_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/utilization": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Utilization Report */
+        get: operations["get_utilization_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/{full_path}": {
         parameters: {
             query?: never;
@@ -687,6 +772,55 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** ImportIssueRead */
+        ImportIssueRead: {
+            /** Id */
+            id: number;
+            /** Issue Type */
+            issue_type: string;
+            /** Severity */
+            severity: string;
+            /** Message */
+            message: string;
+            /** Source Ref */
+            source_ref: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            } | null;
+            /** Entity Type */
+            entity_type: string | null;
+            /** Entity Id */
+            entity_id: number | null;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Resolved By */
+            resolved_by: number | null;
+            /** Resolution Note */
+            resolution_note: string | null;
+        };
+        /**
+         * ImportIssueType
+         * @enum {string}
+         */
+        ImportIssueType: "LAYOUT_MISMATCH" | "ORPHAN_FILL" | "AMBIGUOUS_BOUNDARY" | "UNLABELED_ROW_ENTRY" | "UNATTACHED_NOTE" | "CONFLICTING_VESSEL_LENGTH" | "UNKNOWN_BERTH_LENGTH" | "UNKNOWN_BERTH" | "NAME_VARIANTS_MERGED" | "HISTORICAL_OVERLAP";
+        /** IntegrityIssueRead */
+        IntegrityIssueRead: {
+            /** Code */
+            code: string;
+            /** Severity */
+            severity: string;
+            /** Message */
+            message: string;
+            /** Booking Id */
+            booking_id?: number | null;
+            /** Vessel Id */
+            vessel_id?: number | null;
+            /** Berth Id */
+            berth_id?: number | null;
+            /** Related Booking Id */
+            related_booking_id?: number | null;
+        };
         /** Issue */
         Issue: {
             /** Code */
@@ -728,6 +862,24 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /** ResolveImportIssueRequest */
+        ResolveImportIssueRequest: {
+            /** Note */
+            note?: string | null;
+        };
+        /** ReviewSummary */
+        ReviewSummary: {
+            /** Historical Double Bookings */
+            historical_double_bookings: number;
+            /** Vessels Too Long */
+            vessels_too_long: number;
+            /** Vessels Unknown Length */
+            vessels_unknown_length: number;
+            /** Berths Unknown Length */
+            berths_unknown_length: number;
+            /** Unresolved Import Issues */
+            unresolved_import_issues: number;
+        };
         /** UserRead */
         UserRead: {
             /** Id */
@@ -745,6 +897,23 @@ export interface components {
          * @enum {string}
          */
         UserRole: "staff" | "admin";
+        /** UtilizationRow */
+        UtilizationRow: {
+            /** Berth Id */
+            berth_id: number;
+            /** Berth Name */
+            berth_name: string;
+            /** Year */
+            year: number;
+            /** Days Booked */
+            days_booked: number;
+            /** Tentative Days */
+            tentative_days: number;
+            /** Total Days In Year */
+            total_days_in_year: number;
+            /** Percent Occupied */
+            percent_occupied: number;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1743,6 +1912,145 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BerthAvailability"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_integrity_issues: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IntegrityIssueRead"][];
+                };
+            };
+        };
+    };
+    list_import_issues: {
+        parameters: {
+            query?: {
+                type?: components["schemas"]["ImportIssueType"] | null;
+                resolved?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportIssueRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_import_issue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                issue_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResolveImportIssueRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportIssueRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_review_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewSummary"];
+                };
+            };
+        };
+    };
+    get_utilization_report: {
+        parameters: {
+            query: {
+                year_from: number;
+                year_to: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UtilizationRow"][];
                 };
             };
             /** @description Validation Error */

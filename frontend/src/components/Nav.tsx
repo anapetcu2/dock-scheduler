@@ -25,6 +25,17 @@ export function Nav() {
           <NavLink to="/berths" className={LINK_CLASS}>
             Berths
           </NavLink>
+          <NavLink to="/availability" className={LINK_CLASS}>
+            Find a berth
+          </NavLink>
+          <NavLink to="/reports" className={LINK_CLASS}>
+            Reports
+          </NavLink>
+          {isLoggedIn && (
+            <NavLink to="/review" className={LINK_CLASS}>
+              Data review
+            </NavLink>
+          )}
         </nav>
         <div className="flex items-center gap-3">
           {isLoggedIn ? (
