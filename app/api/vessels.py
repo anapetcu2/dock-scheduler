@@ -1,7 +1,7 @@
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import require_user
@@ -29,17 +29,37 @@ def _get_or_404(db: Session, vessel_id: int) -> Vessel:
     return vessel
 
 
+def _last_booked_subquery():
+    """Per vessel, the end_date of its most recent non-cancelled booking.
+    A subquery (not a correlated scalar-per-row query) so listing 500+
+    vessels costs one extra JOIN, not N extra round trips."""
+    return (
+        select(Booking.vessel_id, func.max(Booking.end_date).label("last_booked_date"))
+        .where(Booking.vessel_id.isnot(None), Booking.status != BookingStatus.cancelled)
+        .group_by(Booking.vessel_id)
+        .subquery()
+    )
+
+
 @router.get("", operation_id="list_vessels", response_model=list[VesselRead])
 def list_vessels(
     q: str | None = None, include_inactive: bool = False, db: Session = Depends(get_db)
-) -> list[Vessel]:
-    stmt = select(Vessel).order_by(Vessel.name.asc())
+) -> list[VesselRead]:
+    last_booked = _last_booked_subquery()
+    stmt = select(Vessel, last_booked.c.last_booked_date).outerjoin(
+        last_booked, last_booked.c.vessel_id == Vessel.id
+    )
     if not include_inactive:
         stmt = stmt.where(Vessel.is_active.is_(True))
     if q:
         needle = f"%{q.strip().upper()}%"
         stmt = stmt.where(Vessel.normalized_key.ilike(needle) | Vessel.name.ilike(f"%{q}%"))
-    return db.scalars(stmt).all()
+    stmt = stmt.order_by(last_booked.c.last_booked_date.desc().nulls_last(), Vessel.name.asc())
+
+    return [
+        VesselRead.model_validate(vessel).model_copy(update={"last_booked_date": last_booked_date})
+        for vessel, last_booked_date in db.execute(stmt).all()
+    ]
 
 
 @router.get("/{vessel_id}", operation_id="get_vessel", response_model=VesselDetail)
@@ -61,6 +81,7 @@ def get_vessel(vessel_id: int, db: Session = Depends(get_db)) -> VesselDetail:
     today = date.today()
     upcoming = [b for b in bookings if b.end_date >= today]
     past = [b for b in bookings if b.end_date < today]
+    last_booked_date = max((b.end_date for b in bookings), default=None)
 
     def _summary(b: Booking) -> VesselBookingSummary:
         return VesselBookingSummary(
@@ -73,7 +94,7 @@ def get_vessel(vessel_id: int, db: Session = Depends(get_db)) -> VesselDetail:
         )
 
     return VesselDetail(
-        **VesselRead.model_validate(vessel).model_dump(),
+        **{**VesselRead.model_validate(vessel).model_dump(), "last_booked_date": last_booked_date},
         contacts=list(contact_rows),
         upcoming_bookings=[_summary(b) for b in upcoming],
         past_bookings=[_summary(b) for b in past],

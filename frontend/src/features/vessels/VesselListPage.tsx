@@ -7,6 +7,7 @@ import { useVessels } from "../../api/vessels";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { formatDisplayDate } from "../../lib/dates";
 
 type Tab = "active" | "historical";
 
@@ -73,6 +74,7 @@ export function VesselListPage() {
               <th className="px-3 py-2">LOA</th>
               <th className="px-3 py-2">Draft</th>
               <th className="px-3 py-2">Organization</th>
+              <th className="px-3 py-2">Last booked</th>
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -90,6 +92,9 @@ export function VesselListPage() {
                 </td>
                 <td className="px-3 py-2">{v.draft_ft ?? "—"}</td>
                 <td className="px-3 py-2">{orgName(v.organization_id)}</td>
+                <td className="px-3 py-2 text-slate-500">
+                  {v.last_booked_date ? formatDisplayDate(v.last_booked_date) : "Never"}
+                </td>
                 <td className="px-3 py-2 text-right">
                   {v.loa_ft == null && (
                     <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">

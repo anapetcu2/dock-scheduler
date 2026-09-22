@@ -35,6 +35,10 @@ class VesselRead(BaseModel):
     organization_id: int | None
     is_active: bool
     notes: str | None
+    # The end_date of this vessel's most recent non-cancelled booking, or
+    # null if it's never been booked. Computed, not stored — see
+    # app/api/vessels.py.
+    last_booked_date: date | None = None
 
     model_config = {"from_attributes": True}
 

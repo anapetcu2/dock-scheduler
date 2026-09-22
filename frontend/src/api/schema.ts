@@ -1003,6 +1003,8 @@ export interface components {
             is_active: boolean;
             /** Notes */
             notes: string | null;
+            /** Last Booked Date */
+            last_booked_date?: string | null;
             /**
              * Contacts
              * @default []
@@ -1039,6 +1041,8 @@ export interface components {
             is_active: boolean;
             /** Notes */
             notes: string | null;
+            /** Last Booked Date */
+            last_booked_date?: string | null;
         };
         /** VesselUpdate */
         VesselUpdate: {
