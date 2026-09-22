@@ -10,7 +10,7 @@ import { LoadingState } from "../../components/LoadingState";
 import { addDaysISO, todayISO } from "../../lib/dates";
 
 type Tab = "recent" | "historical";
-const RECENT_YEARS = 5;
+const RECENT_YEARS = 2;
 
 export function VesselListPage() {
   const [query, setQuery] = useState("");
