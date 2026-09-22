@@ -7,6 +7,24 @@ from sqlalchemy.pool import NullPool
 from app.config import get_settings
 
 
+def normalize_database_url(url: str) -> str:
+    """Force the psycopg (v3) driver, regardless of what scheme we're given.
+
+    Neon hands out connection strings as `postgresql://...` (sometimes
+    `postgres://...`). SQLAlchemy treats a bare `postgresql://` scheme as
+    "use psycopg2", which isn't installed here — only `psycopg[binary]`
+    (v3) is — so that URL needs `+psycopg` spliced in before it reaches
+    `create_engine`. This is the one place that happens, so every caller
+    (app engine, Alembic, the importer/CLI, tests) gets it automatically
+    without editing .env or the Vercel env vars.
+    """
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
+    if url.startswith("postgresql://"):
+        url = "postgresql+psycopg://" + url[len("postgresql://") :]
+    return url
+
+
 def make_engine(database_url: str, *, pooled: bool):
     """Build an engine.
 
@@ -19,7 +37,7 @@ def make_engine(database_url: str, *, pooled: bool):
     """
     connect_args = {"prepare_threshold": None} if pooled else {}
     return create_engine(
-        database_url,
+        normalize_database_url(database_url),
         poolclass=NullPool if pooled else None,
         connect_args=connect_args,
     )

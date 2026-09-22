@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from alembic import command
 from app.auth.session import create_session_token
 from app.config import get_settings
-from app.db import get_db
+from app.db import get_db, normalize_database_url
 from app.main import app
 from app.models.berths import Berth
 from app.models.users import User, UserRole
@@ -47,7 +47,7 @@ def test_engine(test_database_url):
     alembic_cfg = Config(str(ROOT / "alembic.ini"))
     command.upgrade(alembic_cfg, "head")
 
-    engine = create_engine(test_database_url)
+    engine = create_engine(normalize_database_url(test_database_url))
     yield engine
     engine.dispose()
 

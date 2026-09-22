@@ -5,6 +5,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.config import get_settings
+from app.db import normalize_database_url
 from app.models import Base
 
 config = context.config
@@ -20,7 +21,7 @@ target_metadata = Base.metadata
 # without touching DATABASE_URL_DIRECT; the CLI/deploy path never sets it, so
 # it falls back to the configured direct URL.
 database_url = os.environ.get("ALEMBIC_DATABASE_URL") or get_settings().database_url_direct
-config.set_main_option("sqlalchemy.url", database_url)
+config.set_main_option("sqlalchemy.url", normalize_database_url(database_url))
 
 
 def run_migrations_offline() -> None:
