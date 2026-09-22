@@ -1,0 +1,17 @@
+.env
+.env.production
+data/
+frontend/dist/
+frontend/node_modules/
+.venv/
+
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+.vercel/
+requirements.txt
+
+.DS_Store
