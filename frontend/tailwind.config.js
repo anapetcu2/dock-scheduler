@@ -3,6 +3,16 @@ export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          '"Plus Jakarta Sans"',
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "sans-serif",
+        ],
+        mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
+      },
       colors: {
         // Dark blue navy scale used for page/panel backgrounds and borders.
         surface: {
@@ -47,11 +57,34 @@ export default {
           from: { opacity: 0, transform: "translateY(6px)" },
           to: { opacity: 1, transform: "translateY(0)" },
         },
+        float: {
+          "0%, 100%": { transform: "translateY(0) translateX(0)" },
+          "50%": { transform: "translateY(-18px) translateX(8px)" },
+        },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0) translateX(0)" },
+          "50%": { transform: "translateY(14px) translateX(-10px)" },
+        },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "pulse-glow": {
+          "0%, 100%": { opacity: 0.6, transform: "scale(1)" },
+          "50%": { opacity: 1, transform: "scale(1.05)" },
+        },
       },
       animation: {
         "slide-in-right": "slide-in-right 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
         "fade-in": "fade-in 0.2s ease-out",
         "fade-in-up": "fade-in-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        float: "float 9s ease-in-out infinite",
+        "float-slow": "float-slow 13s ease-in-out infinite",
+        "gradient-x": "gradient-x 6s ease infinite",
+        "pulse-glow": "pulse-glow 3s ease-in-out infinite",
+      },
+      backgroundSize: {
+        "gradient-x": "200% 200%",
       },
     },
   },

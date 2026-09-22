@@ -7,7 +7,11 @@
 }
 
 body {
-  @apply bg-surface-900 text-slate-100 antialiased;
+  @apply bg-surface-900 font-sans text-slate-100 antialiased;
+}
+
+.bg-gradient-radial {
+  background-image: radial-gradient(var(--tw-gradient-stops));
 }
 
 /* Slim, dark-friendly scrollbars — the schedule grid and long tables

@@ -4,7 +4,7 @@ import type { Berth } from "../../api/berths";
 import type { Booking } from "../../api/bookings";
 import { isWeekendISO, maxISO, minISO } from "../../lib/dates";
 import { BookingBar } from "./BookingBar";
-import { LANE_HEIGHT_PX, clipToRange } from "./gridMath";
+import { DAY_COLUMN_MIN_PX, LANE_HEIGHT_PX, clipToRange } from "./gridMath";
 import { assignLanes } from "./laneAssignment";
 
 interface ScheduleRowProps {
@@ -50,7 +50,7 @@ export function ScheduleRow({
     <div
       className="grid border-b border-surface-700/60"
       style={{
-        gridTemplateColumns: `repeat(${days.length}, minmax(28px, 1fr))`,
+        gridTemplateColumns: `repeat(${days.length}, minmax(${DAY_COLUMN_MIN_PX}px, 1fr))`,
         gridAutoRows: LANE_HEIGHT_PX,
         minHeight: laneCount * LANE_HEIGHT_PX,
       }}

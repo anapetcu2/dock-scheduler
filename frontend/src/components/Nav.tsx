@@ -9,7 +9,7 @@ import {
   Search,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 
 import { useLogout } from "../api/auth";
 import { useAuth } from "../features/auth/useAuth";
@@ -44,14 +44,17 @@ export function Nav() {
     <header className="sticky top-0 z-30 border-b border-surface-700 bg-surface-900/90 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-2.5">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 pr-2 text-slate-100">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient shadow-glow">
+          <Link
+            to="/welcome"
+            className="transition-default group flex items-center gap-2 rounded-lg pr-2 text-slate-100 hover:opacity-90"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient shadow-glow transition-transform duration-300 group-hover:scale-105 group-hover:rotate-3">
               <Compass className="text-white" size={18} />
             </span>
             <span className="hidden text-sm font-semibold tracking-tight sm:inline">
               Dock Scheduler
             </span>
-          </div>
+          </Link>
           <nav className="flex flex-wrap items-center gap-1" aria-label="Main">
             {NAV_ITEMS.filter((item) => !item.requiresAuth || isLoggedIn).map((item) => (
               <NavLink key={item.to} to={item.to} end={item.end} className={LINK_CLASS}>

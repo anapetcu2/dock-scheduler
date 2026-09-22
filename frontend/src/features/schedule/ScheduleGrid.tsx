@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import type { Berth } from "../../api/berths";
 import type { Booking } from "../../api/bookings";
 import { eachISODayInRange } from "../../lib/dates";
-import { LANE_HEIGHT_PX } from "./gridMath";
+import { DAY_COLUMN_MIN_PX, LANE_HEIGHT_PX } from "./gridMath";
 import { assignLanes } from "./laneAssignment";
 import { ScheduleHeader } from "./ScheduleHeader";
 import { ScheduleRow } from "./ScheduleRow";
@@ -19,8 +19,8 @@ interface ScheduleGridProps {
   onCreateBooking: (berthId: number, start: string, end: string) => void;
 }
 
-const LABEL_COLUMN_WIDTH = 176;
-const HEADER_HEIGHT = 40;
+const LABEL_COLUMN_WIDTH = 208;
+const HEADER_HEIGHT = 52;
 
 export function ScheduleGrid({
   berths,
@@ -45,13 +45,21 @@ export function ScheduleGrid({
             <Link
               key={berth.id}
               to={`/berths`}
-              className="transition-default flex items-center border-b border-surface-700/60 px-3 text-sm font-medium text-slate-300 hover:bg-surface-800 hover:text-white"
+              className="transition-default flex flex-col justify-center gap-0.5 border-b border-surface-700/60 px-3 text-sm font-medium text-slate-300 hover:bg-surface-800 hover:text-white"
               style={{ height: laneCount * LANE_HEIGHT_PX }}
             >
-              <span className="truncate">{berth.name}</span>
-              {berth.length_ft == null && (
-                <span className="ml-1 shrink-0 text-xs text-amber-400" title="Length unknown">
-                  {"⚠"}
+              <span className="flex items-center gap-1 truncate">
+                {berth.name}
+                {berth.length_ft == null && (
+                  <span className="shrink-0 text-xs text-amber-400" title="Length unknown">
+                    {"⚠"}
+                  </span>
+                )}
+              </span>
+              {berth.length_ft != null && (
+                <span className="text-xs font-normal text-slate-500">
+                  {berth.length_ft}
+                  {"′"} max
                 </span>
               )}
             </Link>
@@ -60,7 +68,7 @@ export function ScheduleGrid({
       </div>
 
       <div className="min-w-0 flex-1 overflow-x-auto">
-        <div style={{ minWidth: days.length * 28 }}>
+        <div style={{ minWidth: days.length * DAY_COLUMN_MIN_PX }}>
           <ScheduleHeader days={days} />
           {berths.map((berth) => (
             <ScheduleRow

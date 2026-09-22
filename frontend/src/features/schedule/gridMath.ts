@@ -1,6 +1,10 @@
 import { compareISODate, daysBetweenInclusive, maxISO, minISO } from "../../lib/dates";
 
-export const LANE_HEIGHT_PX = 28;
+// Made deliberately roomy: with only a handful of berths, the grid has
+// plenty of vertical space to spend on taller, easier-to-read/click rows
+// instead of packing them tight the way a busy 50-row grid would need to.
+export const LANE_HEIGHT_PX = 44;
+export const DAY_COLUMN_MIN_PX = 44;
 export const ROW_GAP_PX = 4;
 
 /** 1-based column index of `value` within [rangeStart, rangeEnd]. */

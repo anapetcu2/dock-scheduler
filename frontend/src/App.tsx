@@ -5,6 +5,7 @@ import { RequireAuth } from "./components/RequireAuth";
 import { LoginPage } from "./features/auth/LoginPage";
 import { AvailabilityPage } from "./features/availability/AvailabilityPage";
 import { BerthsPage } from "./features/berths/BerthsPage";
+import { HomePage } from "./features/home/HomePage";
 import { ReportsPage } from "./features/reports/ReportsPage";
 import { ReviewPage } from "./features/review/ReviewPage";
 import { SchedulePage } from "./features/schedule/SchedulePage";
@@ -18,6 +19,7 @@ export function App() {
       <main className="mx-auto max-w-7xl px-4 py-6">
         <Routes>
           <Route path="/" element={<SchedulePage />} />
+          <Route path="/welcome" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/vessels" element={<VesselListPage />} />
           <Route path="/vessels/:vesselId" element={<VesselDetailPage />} />
