@@ -545,60 +545,96 @@ def _write_bookings(
     vessels_by_key: dict[str, Vessel],
     config: ImporterConfig,
 ) -> None:
+    """Insert every parsed booking, demoting to `legacy_conflict` whatever
+    would otherwise violate either DB exclusion constraint: two active
+    bookings on the same berth (`bookings_no_overlap`), or the same vessel
+    on two different berths at once (`bookings_vessel_no_overlap`) — a
+    conflicted booking is exempt from both (see their WHERE clauses), so it
+    never blocks anything later and never gets inserted as itself a
+    conflict. Everything is processed in one global chronological pass
+    (not grouped by berth first) so cross-berth vessel conflicts resolve
+    "first booking wins" the same way regardless of which berth is
+    involved — matching the migration that originally cleaned up the
+    historical conflicts in `bookings_vessel_no_overlap_exclusion_constraint.py`.
+    """
     from app.services.vessels import normalize_vessel_key
 
-    by_berth: dict[str, list[RawBooking]] = {}
-    for booking in stats.bookings:
-        name, _ = stats.berth_names[booking.berth_label]
-        by_berth.setdefault(name, []).append(booking)
+    ordered = sorted(stats.bookings, key=lambda b: (b.start_date, b.end_date))
+    active_by_berth: dict[int, list[Booking]] = {}
+    active_by_vessel: dict[int, list[Booking]] = {}
 
-    for berth_name, bookings in by_berth.items():
+    for raw in ordered:
+        berth_name, _ = stats.berth_names[raw.berth_label]
         berth = berths_by_name[berth_name]
-        bookings.sort(key=lambda b: (b.start_date, b.end_date))
-        active: list[Booking] = []
 
-        for raw in bookings:
-            vessel_id = None
-            if raw.vessel_mention is not None:
-                key = normalize_vessel_key(raw.vessel_mention.prefix, raw.vessel_mention.name)
-                vessel = vessels_by_key.get(key)
-                vessel_id = vessel.id if vessel else None
+        vessel_id = None
+        if raw.vessel_mention is not None:
+            key = normalize_vessel_key(raw.vessel_mention.prefix, raw.vessel_mention.name)
+            vessel = vessels_by_key.get(key)
+            vessel_id = vessel.id if vessel else None
 
-            overlaps = [
-                b for b in active if b.start_date <= raw.end_date and raw.start_date <= b.end_date
+        berth_overlaps = [
+            b
+            for b in active_by_berth.get(berth.id, [])
+            if b.start_date <= raw.end_date and raw.start_date <= b.end_date
+        ]
+        vessel_overlaps = (
+            [
+                b
+                for b in active_by_vessel.get(vessel_id, [])
+                if b.start_date <= raw.end_date and raw.start_date <= b.end_date
             ]
-            status = BookingStatus.legacy_conflict if overlaps else BookingStatus.confirmed
+            if vessel_id is not None
+            else []
+        )
+        conflicted = bool(berth_overlaps or vessel_overlaps)
+        status = BookingStatus.legacy_conflict if conflicted else BookingStatus.confirmed
 
-            booking = Booking(
-                berth_id=berth.id,
-                kind=BookingKind(raw.kind),
-                vessel_id=vessel_id,
-                title=raw.title,
-                start_date=raw.start_date,
-                end_date=raw.end_date,
-                status=status,
-                notes=raw.notes,
-                source=BookingSource.import_,
-                source_ref=raw.source_ref,
-                created_by=None,
+        booking = Booking(
+            berth_id=berth.id,
+            kind=BookingKind(raw.kind),
+            vessel_id=vessel_id,
+            title=raw.title,
+            start_date=raw.start_date,
+            end_date=raw.end_date,
+            status=status,
+            notes=raw.notes,
+            source=BookingSource.import_,
+            source_ref=raw.source_ref,
+            created_by=None,
+        )
+        session.add(booking)
+        session.flush()
+
+        if not conflicted:
+            active_by_berth.setdefault(berth.id, []).append(booking)
+            if vessel_id is not None:
+                active_by_vessel.setdefault(vessel_id, []).append(booking)
+
+        for other in berth_overlaps:
+            stats.issues.append(
+                RawIssue(
+                    ImportIssueType.HISTORICAL_OVERLAP,
+                    ImportIssueSeverity.warning,
+                    f'"{berth_name}" {raw.start_date}–{raw.end_date} overlaps '
+                    f"booking #{other.id} ({other.start_date}–{other.end_date}).",
+                    source_ref=raw.source_ref,
+                    entity_type="booking",
+                    entity_id=booking.id,
+                )
             )
-            session.add(booking)
-            session.flush()
-            active.append(booking)
-
-            if overlaps:
-                for other in overlaps:
-                    stats.issues.append(
-                        RawIssue(
-                            ImportIssueType.HISTORICAL_OVERLAP,
-                            ImportIssueSeverity.warning,
-                            f'"{berth_name}" {raw.start_date}–{raw.end_date} overlaps '
-                            f"booking #{other.id} ({other.start_date}–{other.end_date}).",
-                            source_ref=raw.source_ref,
-                            entity_type="booking",
-                            entity_id=booking.id,
-                        )
-                    )
+        for other in vessel_overlaps:
+            stats.issues.append(
+                RawIssue(
+                    ImportIssueType.HISTORICAL_OVERLAP,
+                    ImportIssueSeverity.warning,
+                    f"Vessel already booked on another berth, {raw.start_date}–{raw.end_date} "
+                    f"overlaps booking #{other.id} ({other.start_date}–{other.end_date}).",
+                    source_ref=raw.source_ref,
+                    entity_type="booking",
+                    entity_id=booking.id,
+                )
+            )
 
 
 def run_import(
