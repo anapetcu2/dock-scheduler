@@ -1,8 +1,10 @@
+import { CheckCircle2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 
 import { type VesselDetail, type VesselUpdateInput, useUpdateVessel } from "../../api/vessels";
 import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
+import { cardClass, inputClass, labelClass } from "../../lib/formStyles";
 
 export function VesselEditForm({ vessel }: { vessel: VesselDetail }) {
   const updateVessel = useUpdateVessel();
@@ -30,70 +32,66 @@ export function VesselEditForm({ vessel }: { vessel: VesselDetail }) {
   });
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
+    <form onSubmit={onSubmit} className={`${cardClass} space-y-3 p-4`}>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="name" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="name" className={labelClass}>
             Name
           </label>
-          <input
-            id="name"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            {...register("name")}
-          />
+          <input id="name" className={`${inputClass} w-full`} {...register("name")} />
         </div>
         <div>
-          <label htmlFor="type_prefix" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="type_prefix" className={labelClass}>
             Type prefix
           </label>
-          <input
-            id="type_prefix"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            {...register("type_prefix")}
-          />
+          <input id="type_prefix" className={`${inputClass} w-full`} {...register("type_prefix")} />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="loa_ft" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="loa_ft" className={labelClass}>
             LOA (ft)
           </label>
           <input
             id="loa_ft"
             type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} w-full`}
             {...register("loa_ft", { valueAsNumber: true })}
           />
         </div>
         <div>
-          <label htmlFor="draft_ft" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="draft_ft" className={labelClass}>
             Draft (ft)
           </label>
           <input
             id="draft_ft"
             type="number"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} w-full`}
             {...register("draft_ft", { valueAsNumber: true })}
           />
         </div>
       </div>
       <div>
-        <label htmlFor="notes" className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor="notes" className={labelClass}>
           Notes
         </label>
-        <textarea
-          id="notes"
-          rows={2}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          {...register("notes")}
-        />
+        <textarea id="notes" rows={2} className={`${inputClass} w-full`} {...register("notes")} />
       </div>
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input type="checkbox" {...register("is_active")} />
+      <label className="flex items-center gap-2 text-sm text-slate-300">
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-surface-500 bg-surface-800 text-brand-500 focus:ring-brand-500/40"
+          {...register("is_active")}
+        />
         Active
       </label>
       {updateVessel.isError && <ErrorState error={updateVessel.error} />}
-      {updateVessel.isSuccess && <p className="text-sm text-emerald-700">Saved.</p>}
+      {updateVessel.isSuccess && (
+        <p className="flex items-center gap-1.5 text-sm text-emerald-400">
+          <CheckCircle2 className="h-4 w-4" />
+          Saved.
+        </p>
+      )}
       <Button type="submit" variant="primary" disabled={updateVessel.isPending}>
         Save
       </Button>

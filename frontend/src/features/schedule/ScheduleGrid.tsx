@@ -35,9 +35,9 @@ export function ScheduleGrid({
   const days = eachISODayInRange(rangeStart, rangeEnd);
 
   return (
-    <div className="flex overflow-hidden rounded-md border border-slate-200 bg-white">
-      <div className="shrink-0 border-r border-slate-200" style={{ width: LABEL_COLUMN_WIDTH }}>
-        <div className="border-b border-slate-200 bg-slate-50" style={{ height: HEADER_HEIGHT }} />
+    <div className="flex overflow-hidden rounded-xl border border-surface-700 bg-surface-850 shadow-panel">
+      <div className="shrink-0 border-r border-surface-700" style={{ width: LABEL_COLUMN_WIDTH }}>
+        <div className="border-b border-surface-700 bg-surface-800/60" style={{ height: HEADER_HEIGHT }} />
         {berths.map((berth) => {
           const bookings = bookingsByBerth.get(berth.id) ?? [];
           const { laneCount } = assignLanes(bookings);
@@ -45,12 +45,12 @@ export function ScheduleGrid({
             <Link
               key={berth.id}
               to={`/berths`}
-              className="flex items-center border-b border-slate-100 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="transition-default flex items-center border-b border-surface-700/60 px-3 text-sm font-medium text-slate-300 hover:bg-surface-800 hover:text-white"
               style={{ height: laneCount * LANE_HEIGHT_PX }}
             >
               <span className="truncate">{berth.name}</span>
               {berth.length_ft == null && (
-                <span className="ml-1 shrink-0 text-xs text-amber-600" title="Length unknown">
+                <span className="ml-1 shrink-0 text-xs text-amber-400" title="Length unknown">
                   {"⚠"}
                 </span>
               )}

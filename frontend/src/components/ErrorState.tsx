@@ -1,3 +1,5 @@
+import { AlertTriangle } from "lucide-react";
+
 import { ApiError } from "../api/client";
 
 function messageFor(error: unknown): string {
@@ -19,7 +21,11 @@ function messageFor(error: unknown): string {
 
 export function ErrorState({ error }: { error: unknown }) {
   return (
-    <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+    <div
+      className="flex items-start gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200"
+      role="alert"
+    >
+      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-rose-400" />
       {messageFor(error)}
     </div>
   );

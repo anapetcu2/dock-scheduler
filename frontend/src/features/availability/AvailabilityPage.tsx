@@ -1,12 +1,15 @@
-import { type FormEvent, useState } from "react";
+import { CheckCircle2, Clock, Search, XCircle } from "lucide-react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { useLocation } from "react-router-dom";
 
 import { type AvailabilityQuery, useAvailability } from "../../api/availability";
 import type { BerthAvailability } from "../../api/availability";
 import { useBerths } from "../../api/berths";
+import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { formatDateRange, todayISO } from "../../lib/dates";
+import { cardClass, inputClass, labelClass } from "../../lib/formStyles";
 import { BookingDrawer, type DrawerState } from "../bookings/BookingDrawer";
 import { VesselCombobox } from "../bookings/VesselCombobox";
 
@@ -45,12 +48,12 @@ export function AvailabilityPage() {
   const tooSmall = results?.filter((r) => !r.fits) ?? [];
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">Find a berth</h1>
+    <div className="animate-fade-in-up">
+      <h1 className="mb-4 text-xl font-semibold text-slate-100">Find a berth</h1>
 
-      <form onSubmit={onSubmit} className="mb-6 grid max-w-2xl gap-3 rounded-md border border-slate-200 bg-white p-4 sm:grid-cols-2">
+      <form onSubmit={onSubmit} className={`${cardClass} mb-6 grid max-w-2xl gap-3 p-4 sm:grid-cols-2`}>
         <div className="sm:col-span-2">
-          <span className="mb-1 block text-sm font-medium text-slate-700">Vessel</span>
+          <span className={labelClass}>Vessel</span>
           <VesselCombobox
             vesselId={vesselId}
             vesselName={vesselName}
@@ -60,13 +63,11 @@ export function AvailabilityPage() {
               setLoaFt("");
             }}
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Or skip the vessel and enter a length instead:
-          </p>
+          <p className="mt-1 text-xs text-slate-500">Or skip the vessel and enter a length instead:</p>
           <input
             type="number"
             placeholder="Length (ft)"
-            className="mt-1 w-32 rounded-md border border-slate-300 px-2 py-1 text-sm"
+            className={`${inputClass} mt-1 w-32 py-1`}
             value={loaFt}
             onChange={(e) => {
               setLoaFt(e.target.value);
@@ -78,37 +79,34 @@ export function AvailabilityPage() {
           />
         </div>
         <div>
-          <label htmlFor="avail-start" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="avail-start" className={labelClass}>
             Start date
           </label>
           <input
             id="avail-start"
             type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} w-full`}
             value={start}
             onChange={(e) => setStart(e.target.value)}
           />
         </div>
         <div>
-          <label htmlFor="avail-end" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="avail-end" className={labelClass}>
             End date
           </label>
           <input
             id="avail-end"
             type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+            className={`${inputClass} w-full`}
             value={end}
             onChange={(e) => setEnd(e.target.value)}
           />
         </div>
         <div className="sm:col-span-2">
-          <button
-            type="submit"
-            disabled={vesselId == null && loaFt === ""}
-            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-300"
-          >
+          <Button type="submit" variant="primary" disabled={vesselId == null && loaFt === ""}>
+            <Search className="h-4 w-4" />
             Search
-          </button>
+          </Button>
         </div>
       </form>
 
@@ -119,11 +117,20 @@ export function AvailabilityPage() {
         <div className="space-y-6">
           <ResultGroup
             title="Available and fits"
+            icon={<CheckCircle2 className="h-4 w-4 text-emerald-400" />}
             results={fitsAndFree}
             onBook={(berthId) => setDrawer({ mode: "create", berthId, start, end })}
           />
-          <ResultGroup title="Fits but booked" results={fitsButBusy} />
-          <ResultGroup title="Too small" results={tooSmall} />
+          <ResultGroup
+            title="Fits but booked"
+            icon={<Clock className="h-4 w-4 text-amber-400" />}
+            results={fitsButBusy}
+          />
+          <ResultGroup
+            title="Too small"
+            icon={<XCircle className="h-4 w-4 text-rose-400" />}
+            results={tooSmall}
+          />
         </div>
       )}
 
@@ -139,27 +146,30 @@ export function AvailabilityPage() {
 
 function ResultGroup({
   title,
+  icon,
   results,
   onBook,
 }: {
   title: string;
+  icon: ReactNode;
   results: BerthAvailability[];
   onBook?: (berthId: number) => void;
 }) {
   if (results.length === 0) return null;
   return (
     <section>
-      <h2 className="mb-2 text-sm font-semibold text-slate-700">
+      <h2 className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-slate-200">
+        {icon}
         {title} ({results.length})
       </h2>
-      <ul className="divide-y divide-slate-100 rounded-md border border-slate-200 bg-white">
+      <ul className={`${cardClass} divide-y divide-surface-700/60`}>
         {results.map((r) => (
-          <li key={r.berth_id} className="flex items-center justify-between px-4 py-2 text-sm">
+          <li key={r.berth_id} className="flex items-center justify-between px-4 py-3 text-sm">
             <div>
-              <div className="font-medium text-slate-800">{r.berth_name}</div>
+              <div className="font-medium text-slate-200">{r.berth_name}</div>
               <div className="text-slate-500">{r.fit_reason}</div>
               {r.conflicts.length > 0 && (
-                <div className="mt-1 text-xs text-amber-700">
+                <div className="mt-1 text-xs text-amber-400">
                   Conflicts:{" "}
                   {r.conflicts
                     .map((c) => `${c.title} (${formatDateRange(c.start_date, c.end_date)})`)
@@ -168,13 +178,9 @@ function ResultGroup({
               )}
             </div>
             {onBook && (
-              <button
-                type="button"
-                onClick={() => onBook(r.berth_id)}
-                className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-              >
+              <Button variant="primary" onClick={() => onBook(r.berth_id)}>
                 Book this berth
-              </button>
+              </Button>
             )}
           </li>
         ))}

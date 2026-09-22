@@ -48,7 +48,7 @@ export function ScheduleRow({
 
   return (
     <div
-      className="grid border-b border-slate-100"
+      className="grid border-b border-surface-700/60"
       style={{
         gridTemplateColumns: `repeat(${days.length}, minmax(28px, 1fr))`,
         gridAutoRows: LANE_HEIGHT_PX,
@@ -66,12 +66,12 @@ export function ScheduleRow({
               key={day}
               type="button"
               aria-label={`Book ${berth.name} starting ${day}`}
-              className={`h-full w-full ${
+              className={`transition-default h-full w-full ${
                 inDrag
-                  ? "bg-blue-200"
+                  ? "bg-brand-600/40"
                   : isWeekendISO(day)
-                    ? "bg-slate-50 hover:bg-blue-50"
-                    : "hover:bg-blue-50"
+                    ? "bg-surface-900/30 hover:bg-brand-600/20"
+                    : "hover:bg-brand-600/20"
               }`}
               style={{ gridColumn: index + 1, gridRow: "1 / -1" }}
               onMouseDown={() => {

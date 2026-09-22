@@ -1,3 +1,4 @@
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { type Berth, type BerthUpdateInput, useBerths, useCreateBerth, useUpdateBerth } from "../../api/berths";
@@ -5,6 +6,7 @@ import { Button } from "../../components/Button";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
+import { tableHeadClass, tableWrapperClass } from "../../lib/formStyles";
 import { useAuth } from "../auth/useAuth";
 import { BerthRow } from "./BerthRow";
 import { NewBerthRow } from "./NewBerthRow";
@@ -25,11 +27,12 @@ export function BerthsPage() {
   };
 
   return (
-    <div>
+    <div className="animate-fade-in-up">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Berths</h1>
+        <h1 className="text-xl font-semibold text-slate-100">Berths</h1>
         {isAdmin && !adding && (
           <Button variant="primary" onClick={() => setAdding(true)}>
+            <Plus className="h-4 w-4" />
             Add berth
           </Button>
         )}
@@ -38,9 +41,9 @@ export function BerthsPage() {
       {berths.length === 0 && !adding ? (
         <EmptyState>No berths yet.</EmptyState>
       ) : (
-        <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-md border border-slate-200 bg-white text-sm">
+        <table className={`${tableWrapperClass} border-separate border-spacing-0 text-sm`}>
           <thead>
-            <tr className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr className={tableHeadClass}>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Length (ft)</th>
               <th className="px-3 py-2">Max draft (ft)</th>

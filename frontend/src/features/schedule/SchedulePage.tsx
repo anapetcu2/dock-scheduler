@@ -53,8 +53,8 @@ export function SchedulePage() {
   if (bookingsError) return <ErrorState error={bookingsErrorObj} />;
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-semibold text-slate-900">Schedule</h1>
+    <div className="animate-fade-in-up">
+      <h1 className="mb-4 text-xl font-semibold text-slate-100">Schedule</h1>
       <ScheduleToolbar
         view={view}
         anchor={anchor}

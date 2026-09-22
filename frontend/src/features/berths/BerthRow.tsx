@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { Berth, BerthUpdateInput } from "../../api/berths";
 import { Button } from "../../components/Button";
+import { inputClass } from "../../lib/formStyles";
 
 interface BerthRowProps {
   berth: Berth;
@@ -13,6 +14,9 @@ interface BerthRowProps {
   saving: boolean;
 }
 
+const cellInput = `${inputClass} w-full py-1`;
+const cellInputNarrow = `${inputClass} w-24 py-1`;
+
 export function BerthRow({ berth, isAdmin, isEditing, onEdit, onCancel, onSave, saving }: BerthRowProps) {
   const [name, setName] = useState(berth.name);
   const [lengthFt, setLengthFt] = useState(berth.length_ft?.toString() ?? "");
@@ -22,12 +26,18 @@ export function BerthRow({ berth, isAdmin, isEditing, onEdit, onCancel, onSave, 
 
   if (!isEditing) {
     return (
-      <tr className="border-t border-slate-100">
-        <td className="px-3 py-2 font-medium text-slate-800">{berth.name}</td>
-        <td className="px-3 py-2">{berth.length_ft ?? <span className="text-amber-600">Unknown</span>}</td>
-        <td className="px-3 py-2">{berth.max_draft_ft ?? "—"}</td>
+      <tr className="transition-default border-t border-surface-700/60 hover:bg-surface-800/60">
+        <td className="px-3 py-2 font-medium text-slate-200">{berth.name}</td>
+        <td className="px-3 py-2 text-slate-300">
+          {berth.length_ft ?? <span className="text-amber-400">Unknown</span>}
+        </td>
+        <td className="px-3 py-2 text-slate-300">{berth.max_draft_ft ?? "—"}</td>
         <td className="px-3 py-2">
-          {berth.is_active ? "Yes" : <span className="text-slate-400">No</span>}
+          {berth.is_active ? (
+            <span className="text-emerald-400">Yes</span>
+          ) : (
+            <span className="text-slate-500">No</span>
+          )}
         </td>
         <td className="px-3 py-2 text-slate-500">{berth.notes ?? "—"}</td>
         {isAdmin && (
@@ -42,18 +52,14 @@ export function BerthRow({ berth, isAdmin, isEditing, onEdit, onCancel, onSave, 
   }
 
   return (
-    <tr className="border-t border-slate-100 bg-blue-50/40">
+    <tr className="border-t border-surface-700/60 bg-brand-600/10">
       <td className="px-3 py-2">
-        <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        <input className={cellInput} value={name} onChange={(e) => setName(e.target.value)} />
       </td>
       <td className="px-3 py-2">
         <input
           type="number"
-          className="w-24 rounded border border-slate-300 px-2 py-1"
+          className={cellInputNarrow}
           value={lengthFt}
           onChange={(e) => setLengthFt(e.target.value)}
         />
@@ -61,20 +67,21 @@ export function BerthRow({ berth, isAdmin, isEditing, onEdit, onCancel, onSave, 
       <td className="px-3 py-2">
         <input
           type="number"
-          className="w-24 rounded border border-slate-300 px-2 py-1"
+          className={cellInputNarrow}
           value={maxDraftFt}
           onChange={(e) => setMaxDraftFt(e.target.value)}
         />
       </td>
       <td className="px-3 py-2">
-        <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+        <input
+          type="checkbox"
+          className="h-4 w-4 rounded border-surface-500 bg-surface-800 text-brand-500 focus:ring-brand-500/40"
+          checked={isActive}
+          onChange={(e) => setIsActive(e.target.checked)}
+        />
       </td>
       <td className="px-3 py-2">
-        <input
-          className="w-full rounded border border-slate-300 px-2 py-1"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
+        <input className={cellInput} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </td>
       <td className="whitespace-nowrap px-3 py-2 text-right">
         <Button

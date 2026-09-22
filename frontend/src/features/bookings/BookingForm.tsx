@@ -15,6 +15,7 @@ import { ApiError, type ValidationResult, isValidationResult } from "../../api/c
 import { Button } from "../../components/Button";
 import { ErrorState } from "../../components/ErrorState";
 import { KIND_STYLE } from "../../lib/bookingDisplay";
+import { inputClass, labelClass } from "../../lib/formStyles";
 import { ValidationChecklist } from "./ValidationChecklist";
 import { VesselCombobox } from "./VesselCombobox";
 
@@ -130,13 +131,15 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
-        <span className="mb-1 block text-sm font-medium text-slate-700">Kind</span>
-        <div className="flex gap-1 rounded-md border border-slate-300 p-0.5">
+        <span className={labelClass}>Kind</span>
+        <div className="flex gap-1 rounded-lg border border-surface-600 bg-surface-800 p-0.5">
           {(Object.keys(KIND_STYLE) as BookingKind[]).map((k) => (
             <label
               key={k}
-              className={`flex-1 cursor-pointer rounded px-2 py-1 text-center text-sm ${
-                values.kind === k ? "bg-blue-600 text-white" : "text-slate-600 hover:bg-slate-100"
+              className={`transition-default flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-sm ${
+                values.kind === k
+                  ? "bg-brand-gradient text-white shadow-glow"
+                  : "text-slate-400 hover:bg-surface-700 hover:text-white"
               }`}
             >
               <input type="radio" value={k} className="sr-only" {...register("kind")} />
@@ -148,7 +151,7 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
 
       {values.kind === "vessel" ? (
         <div>
-          <span className="mb-1 block text-sm font-medium text-slate-700">Vessel</span>
+          <span className={labelClass}>Vessel</span>
           <VesselCombobox
             vesselId={vesselId}
             vesselName={vesselName}
@@ -160,20 +163,16 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
         </div>
       ) : (
         <div>
-          <label htmlFor="title" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="title" className={labelClass}>
             Title
           </label>
-          <input
-            id="title"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            {...register("title")}
-          />
+          <input id="title" className={`${inputClass} w-full`} {...register("title")} />
         </div>
       )}
 
       <div>
         <div className="mb-1 flex items-center justify-between">
-          <label htmlFor="berth_id" className="block text-sm font-medium text-slate-700">
+          <label htmlFor="berth_id" className="block text-sm font-medium text-slate-300">
             Berth
           </label>
           <Link
@@ -184,16 +183,12 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
               start: values.start_date,
               end: values.end_date,
             }}
-            className="text-xs text-blue-600 hover:underline"
+            className="text-xs text-brand-400 hover:text-brand-300 hover:underline"
           >
             Find a berth that fits
           </Link>
         </div>
-        <select
-          id="berth_id"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          {...register("berth_id", { valueAsNumber: true })}
-        >
+        <select id="berth_id" className={`${inputClass} w-full`} {...register("berth_id", { valueAsNumber: true })}>
           {berths.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name} {b.length_ft != null ? `(${b.length_ft}ft)` : "(length unknown)"}
@@ -204,53 +199,34 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="start_date" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="start_date" className={labelClass}>
             Start date
           </label>
-          <input
-            id="start_date"
-            type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            {...register("start_date")}
-          />
+          <input id="start_date" type="date" className={`${inputClass} w-full`} {...register("start_date")} />
         </div>
         <div>
-          <label htmlFor="end_date" className="mb-1 block text-sm font-medium text-slate-700">
+          <label htmlFor="end_date" className={labelClass}>
             End date
           </label>
-          <input
-            id="end_date"
-            type="date"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            {...register("end_date")}
-          />
+          <input id="end_date" type="date" className={`${inputClass} w-full`} {...register("end_date")} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="status" className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor="status" className={labelClass}>
           Status
         </label>
-        <select
-          id="status"
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          {...register("status")}
-        >
+        <select id="status" className={`${inputClass} w-full`} {...register("status")}>
           <option value="tentative">Tentative</option>
           <option value="confirmed">Confirmed</option>
         </select>
       </div>
 
       <div>
-        <label htmlFor="notes" className="mb-1 block text-sm font-medium text-slate-700">
+        <label htmlFor="notes" className={labelClass}>
           Notes
         </label>
-        <textarea
-          id="notes"
-          rows={3}
-          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-          {...register("notes")}
-        />
+        <textarea id="notes" rows={3} className={`${inputClass} w-full`} {...register("notes")} />
       </div>
 
       <ValidationChecklist

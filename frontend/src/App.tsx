@@ -13,7 +13,7 @@ import { VesselListPage } from "./features/vessels/VesselListPage";
 
 export function App() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-surface-gradient">
       <Nav />
       <main className="mx-auto max-w-7xl px-4 py-6">
         <Routes>
@@ -40,5 +40,5 @@ export function App() {
 }
 
 function NotFound() {
-  return <p className="text-sm text-slate-500">Page not found.</p>;
+  return <p className="text-sm text-slate-400">Page not found.</p>;
 }

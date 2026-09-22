@@ -3,9 +3,36 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  @apply bg-surface-900 text-slate-100 antialiased;
+}
+
+/* Slim, dark-friendly scrollbars — the schedule grid and long tables
+   scroll a lot, and default light scrollbars look out of place here. */
+* {
+  scrollbar-color: theme("colors.surface.600") transparent;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: theme("colors.surface.600");
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: theme("colors.surface.500");
+}
+
+@layer utilities {
+  .transition-default {
+    @apply transition-all duration-200 ease-out;
+  }
 }

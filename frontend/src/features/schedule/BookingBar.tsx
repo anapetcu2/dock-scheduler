@@ -30,8 +30,8 @@ export function BookingBar({ booking, clip, lane, dimmed, onOpen }: BookingBarPr
       onClick={() => onOpen(booking.id)}
       title={label}
       aria-label={label}
-      className={`group relative flex items-center gap-1 overflow-hidden rounded px-1.5 text-left text-xs font-medium text-white shadow-sm transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-1 ${style.bar} ${
-        isConflict ? "ring-2 ring-red-500 ring-offset-1" : ""
+      className={`transition-default group relative flex items-center gap-1 overflow-hidden rounded-md px-1.5 text-left text-xs font-medium text-white shadow-sm hover:brightness-110 hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-1 focus:ring-offset-surface-850 ${style.bar} ${
+        isConflict ? "ring-2 ring-rose-400 ring-offset-1 ring-offset-surface-850" : ""
       } ${isCancelled ? "opacity-40 line-through" : dimmed ? "opacity-30" : ""}`}
       style={{
         gridColumn: `${clip.startColumn + 1} / span ${clip.span}`,

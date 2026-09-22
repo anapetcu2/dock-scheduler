@@ -1,3 +1,4 @@
+import { Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -8,6 +9,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { formatDisplayDate } from "../../lib/dates";
+import { inputClass, tableHeadClass, tableWrapperClass } from "../../lib/formStyles";
 
 type Tab = "active" | "historical";
 
@@ -33,20 +35,23 @@ export function VesselListPage() {
   const vessels = searching ? allVessels : tab === "active" ? activeVessels : historicalVessels;
 
   return (
-    <div>
+    <div className="animate-fade-in-up">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-slate-900">Vessels</h1>
-        <input
-          type="search"
-          placeholder={"Search vessels…"}
-          className="w-64 rounded-md border border-slate-300 px-3 py-1.5 text-sm"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <h1 className="text-xl font-semibold text-slate-100">Vessels</h1>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+          <input
+            type="search"
+            placeholder={"Search vessels…"}
+            className={`${inputClass} w-64 py-1.5 pl-8`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {!searching && (
-        <div className="mb-4 flex gap-1 border-b border-slate-200">
+        <div className="mb-4 flex gap-1 border-b border-surface-700">
           <TabButton active={tab === "active"} onClick={() => setTab("active")}>
             Active ({activeVessels.length})
           </TabButton>
@@ -66,9 +71,9 @@ export function VesselListPage() {
         </EmptyState>
       )}
       {vessels && vessels.length > 0 && (
-        <table className="w-full border-separate border-spacing-0 overflow-hidden rounded-md border border-slate-200 bg-white text-sm">
+        <table className={`${tableWrapperClass} border-separate border-spacing-0 text-sm`}>
           <thead>
-            <tr className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
+            <tr className={tableHeadClass}>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Type</th>
               <th className="px-3 py-2">LOA</th>
@@ -80,24 +85,24 @@ export function VesselListPage() {
           </thead>
           <tbody>
             {vessels.map((v) => (
-              <tr key={v.id} className="border-t border-slate-100 hover:bg-slate-50">
-                <td className="px-3 py-2 font-medium text-slate-800">
-                  <Link to={`/vessels/${v.id}`} className="hover:text-blue-700">
+              <tr key={v.id} className="transition-default border-t border-surface-700/60 hover:bg-surface-800/60">
+                <td className="px-3 py-2 font-medium text-slate-200">
+                  <Link to={`/vessels/${v.id}`} className="hover:text-brand-300">
                     {v.name}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{v.type_prefix ?? "—"}</td>
-                <td className="px-3 py-2">
-                  {v.loa_ft ?? <span className="text-amber-600">Unknown</span>}
+                <td className="px-3 py-2 text-slate-300">{v.type_prefix ?? "—"}</td>
+                <td className="px-3 py-2 text-slate-300">
+                  {v.loa_ft ?? <span className="text-amber-400">Unknown</span>}
                 </td>
-                <td className="px-3 py-2">{v.draft_ft ?? "—"}</td>
-                <td className="px-3 py-2">{orgName(v.organization_id)}</td>
+                <td className="px-3 py-2 text-slate-300">{v.draft_ft ?? "—"}</td>
+                <td className="px-3 py-2 text-slate-300">{orgName(v.organization_id)}</td>
                 <td className="px-3 py-2 text-slate-500">
                   {v.last_booked_date ? formatDisplayDate(v.last_booked_date) : "Never"}
                 </td>
                 <td className="px-3 py-2 text-right">
                   {v.loa_ft == null && (
-                    <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                    <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs text-amber-400">
                       Needs length
                     </span>
                   )}
@@ -124,8 +129,8 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`border-b-2 px-3 py-2 text-sm font-medium ${
-        active ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-700"
+      className={`transition-default border-b-2 px-3 py-2 text-sm font-medium ${
+        active ? "border-brand-500 text-brand-300" : "border-transparent text-slate-500 hover:text-slate-300"
       }`}
     >
       {children}

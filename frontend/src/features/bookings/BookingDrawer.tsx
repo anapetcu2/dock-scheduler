@@ -106,7 +106,7 @@ function ViewDrawer({
           )}
 
           {isLoggedIn && booking.status !== "cancelled" && (
-            <div className="flex gap-2 border-t border-slate-200 pt-3">
+            <div className="flex gap-2 border-t border-surface-700 pt-3">
               <Button
                 variant="secondary"
                 disabled={cancelBooking.isPending}

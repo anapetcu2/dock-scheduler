@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import type { BerthCreateInput } from "../../api/berths";
 import { Button } from "../../components/Button";
+import { inputClass } from "../../lib/formStyles";
 
 interface NewBerthRowProps {
   onCancel: () => void;
@@ -14,12 +15,12 @@ export function NewBerthRow({ onCancel, onSave, saving }: NewBerthRowProps) {
   const [lengthFt, setLengthFt] = useState("");
 
   return (
-    <tr className="border-t border-slate-100 bg-emerald-50/40">
+    <tr className="border-t border-surface-700/60 bg-emerald-500/10">
       <td className="px-3 py-2">
         <input
           autoFocus
           placeholder="Berth name"
-          className="w-full rounded border border-slate-300 px-2 py-1"
+          className={`${inputClass} w-full py-1`}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -28,14 +29,14 @@ export function NewBerthRow({ onCancel, onSave, saving }: NewBerthRowProps) {
         <input
           type="number"
           placeholder="Length"
-          className="w-24 rounded border border-slate-300 px-2 py-1"
+          className={`${inputClass} w-24 py-1`}
           value={lengthFt}
           onChange={(e) => setLengthFt(e.target.value)}
         />
       </td>
-      <td className="px-3 py-2 text-slate-400">{"—"}</td>
-      <td className="px-3 py-2 text-slate-400">Yes</td>
-      <td className="px-3 py-2 text-slate-400">{"—"}</td>
+      <td className="px-3 py-2 text-slate-500">{"—"}</td>
+      <td className="px-3 py-2 text-slate-500">Yes</td>
+      <td className="px-3 py-2 text-slate-500">{"—"}</td>
       <td className="whitespace-nowrap px-3 py-2 text-right">
         <Button
           variant="primary"
