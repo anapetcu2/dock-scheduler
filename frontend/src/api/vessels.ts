@@ -36,9 +36,10 @@ export interface VesselListQuery {
   historical?: boolean;
 }
 
-export function useVessels(query: VesselListQuery = {}) {
+export function useVessels(query: VesselListQuery = {}, options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ["vessels", query],
+    enabled: options.enabled,
     queryFn: async () =>
       unwrap<Vessel[]>(
         await api.GET("/api/vessels", {

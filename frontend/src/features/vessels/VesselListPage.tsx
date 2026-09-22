@@ -1,9 +1,9 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useOrganizations } from "../../api/organizations";
-import { useVessels } from "../../api/vessels";
+import { type Vessel, useVessels } from "../../api/vessels";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
@@ -11,25 +11,48 @@ import { LoadingState } from "../../components/LoadingState";
 type Tab = "recent" | "historical";
 const RECENT_YEARS = 2;
 
+function isFullyKnown(v: Vessel): boolean {
+  // Length is what actually matters for booking (a null loa_ft blocks a
+  // vessel booking outright — VESSEL_LENGTH_UNKNOWN in booking_rules.py);
+  // type_prefix is cosmetic and often left blank even for a perfectly
+  // usable vessel, so it isn't required here.
+  return v.loa_ft != null;
+}
+
 export function VesselListPage() {
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("recent");
-
-  // A search looks across every vessel regardless of when it was last
-  // used; the recent/historical split only applies to the default browse
-  // view, where it exists purely to keep decades of imported history
-  // from burying the vessels anyone actually books today. The cutoff
-  // itself is computed server-side (see useVessels) against both "today"
-  // and the dataset's own latest booking, so a historical import's tail
-  // end reads as recent too, not just live app activity.
   const searching = query.trim() !== "";
-  const { data: vessels, isPending, isError, error } = useVessels({
-    q: searching ? query : undefined,
-    recentYears: searching ? undefined : RECENT_YEARS,
-    historical: !searching && tab === "historical",
-  });
+
+  // "Recent" is booked-in-the-last-N-years *and* has a known length — a
+  // vessel missing one never shows there, however recently it was booked,
+  // since a length-less vessel can't even be re-booked without fixing
+  // that first. It still needs to be visible *somewhere*, so anything
+  // that doesn't qualify as Recent falls through to Historical instead of
+  // disappearing — Historical is "everything else," not "everything
+  // booked long ago."
+  const { data: candidates, isPending: recentPending, isError: recentError, error: recentErr } =
+    useVessels({ recentYears: RECENT_YEARS, historical: false }, { enabled: !searching });
+  const { data: allVessels, isPending: allPending, isError: allError, error: allErr } = useVessels(
+    {},
+    { enabled: !searching && tab === "historical" },
+  );
+  const { data: searchResults, isPending: searchPending, isError: searchError, error: searchErr } =
+    useVessels({ q: query }, { enabled: searching });
+
+  const recentVessels = useMemo(() => (candidates ?? []).filter(isFullyKnown), [candidates]);
+  const historicalVessels = useMemo(() => {
+    const recentIds = new Set(recentVessels.map((v) => v.id));
+    return (allVessels ?? []).filter((v) => !recentIds.has(v.id));
+  }, [allVessels, recentVessels]);
+
   const { data: organizations } = useOrganizations();
   const orgName = (id: number | null) => organizations?.find((o) => o.id === id)?.name ?? "—";
+
+  const vessels = searching ? searchResults : tab === "recent" ? recentVessels : historicalVessels;
+  const isPending = searching ? searchPending : tab === "recent" ? recentPending : recentPending || allPending;
+  const isError = searching ? searchError : tab === "recent" ? recentError : recentError || allError;
+  const error = searching ? searchErr : tab === "recent" ? recentErr : recentErr ?? allErr;
 
   return (
     <div>
