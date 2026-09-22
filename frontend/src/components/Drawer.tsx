@@ -26,7 +26,7 @@ export function Drawer({ open, title, onClose, children }: DrawerProps) {
             type="button"
             onClick={onClose}
             aria-label="Close drawer"
-            className="transition-default rounded-lg p-1.5 text-slate-400 hover:bg-surface-700 hover:text-white"
+            className="transition-default rounded-lg p-1.5 text-slate-400 hover:bg-surface-700 hover:text-slate-900"
           >
             <X className="h-4 w-4" />
           </button>

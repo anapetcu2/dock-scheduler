@@ -16,7 +16,7 @@ import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 import { cardClass, inputClass, tableHeadClass, tableWrapperClass } from "../../lib/formStyles";
 
-const CHART_COLORS = ["#3b82f6", "#34d399", "#fbbf24", "#fb7185", "#a78bfa", "#22d3ee"];
+const CHART_COLORS = ["#8189d6", "#92e0e2", "#a0c5d4", "#abb9f2", "#7c87c9", "#98a1ef"];
 const CURRENT_YEAR = new Date().getFullYear();
 
 export function ReportsPage() {
@@ -76,29 +76,29 @@ export function ReportsPage() {
           <div className={`${cardClass} mb-6 h-80 p-4`}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1b2540" />
-                <XAxis dataKey="berth" tick={{ fontSize: 12, fill: "#94a3b8" }} stroke="#263251" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#dde1f0" />
+                <XAxis dataKey="berth" tick={{ fontSize: 12, fill: "#5b6b82" }} stroke="#c7cce3" />
                 <YAxis
-                  tick={{ fontSize: 12, fill: "#94a3b8" }}
-                  stroke="#263251"
+                  tick={{ fontSize: 12, fill: "#5b6b82" }}
+                  stroke="#c7cce3"
                   label={{
                     value: "Days booked",
                     angle: -90,
                     position: "insideLeft",
-                    fill: "#94a3b8",
+                    fill: "#5b6b82",
                   }}
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "#131b31",
-                    border: "1px solid #1b2540",
+                    background: "#ffffff",
+                    border: "1px solid #dde1f0",
                     borderRadius: 8,
                     fontSize: 13,
                   }}
-                  labelStyle={{ color: "#e2e8f0" }}
-                  cursor={{ fill: "rgba(59,130,246,0.08)" }}
+                  labelStyle={{ color: "#111827" }}
+                  cursor={{ fill: "rgba(129,137,214,0.08)" }}
                 />
-                <Legend wrapperStyle={{ fontSize: 12, color: "#94a3b8" }} />
+                <Legend wrapperStyle={{ fontSize: 12, color: "#5b6b82" }} />
                 {years.map((year, i) => (
                   <Bar
                     key={year}

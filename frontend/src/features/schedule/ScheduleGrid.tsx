@@ -45,7 +45,7 @@ export function ScheduleGrid({
             <Link
               key={berth.id}
               to={`/berths`}
-              className="transition-default flex flex-col justify-center gap-0.5 border-b border-surface-700/60 px-3 text-sm font-medium text-slate-300 hover:bg-surface-800 hover:text-white"
+              className="transition-default flex flex-col justify-center gap-0.5 border-b border-surface-700/60 px-3 text-sm font-medium text-slate-300 hover:bg-surface-800 hover:text-slate-900"
               style={{ height: laneCount * LANE_HEIGHT_PX }}
             >
               <span className="flex items-center gap-1 truncate">

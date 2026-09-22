@@ -3,19 +3,31 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  @apply bg-surface-900 font-sans text-slate-100 antialiased;
+  @apply bg-surface-900 font-mono text-slate-100 antialiased;
+}
+
+/* Titles/headings stay on the display font (Rubik); everything else
+   (body copy, labels, buttons, form controls) uses the terminal-style
+   monospace set on `body` above. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-sans;
 }
 
 .bg-gradient-radial {
   background-image: radial-gradient(var(--tw-gradient-stops));
 }
 
-/* Slim, dark-friendly scrollbars — the schedule grid and long tables
-   scroll a lot, and default light scrollbars look out of place here. */
+/* Slim scrollbars — the schedule grid and long tables scroll a lot,
+   and default chunky scrollbars look out of place here. */
 * {
   scrollbar-color: theme("colors.surface.600") transparent;
   scrollbar-width: thin;

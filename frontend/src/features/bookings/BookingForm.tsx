@@ -139,7 +139,7 @@ export function BookingForm({ berths, editing, defaults, onSaved, onOpenConflict
               className={`transition-default flex-1 cursor-pointer rounded-md px-2 py-1 text-center text-sm ${
                 values.kind === k
                   ? "bg-brand-gradient text-white shadow-glow"
-                  : "text-slate-400 hover:bg-surface-700 hover:text-white"
+                  : "text-slate-400 hover:bg-surface-700 hover:text-slate-900"
               }`}
             >
               <input type="radio" value={k} className="sr-only" {...register("kind")} />

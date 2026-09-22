@@ -62,7 +62,7 @@ export function ScheduleToolbar({
             className={`transition-default rounded-md px-2.5 py-1 text-sm ${
               view === v
                 ? "bg-brand-gradient text-white shadow-glow"
-                : "text-slate-400 hover:bg-surface-700 hover:text-white"
+                : "text-slate-400 hover:bg-surface-700 hover:text-slate-900"
             }`}
           >
             {VIEW_LABELS[v]}
