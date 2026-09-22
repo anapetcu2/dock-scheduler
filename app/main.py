@@ -8,8 +8,7 @@ from here so the whole thing is one deployable app (see SPEC.md section 2).
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from app.api import api_router
 from app.services.exceptions import BookingConflictError, BookingValidationError
@@ -31,12 +30,12 @@ def handle_booking_conflict_error(_request: Request, exc: BookingConflictError) 
 
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
 
+# Vercel builds frontend/dist via vercel.json's buildCommand before this
+# module is even imported for its build-time static-asset scan, so this is
+# always true in production; it's only False in local dev/tests before
+# `npm run build` has been run. check_dir=False since we've already done
+# the same check ourselves — app.frontend()'s own default check doesn't
+# know to skip itself outside of `fastapi dev` (which this project doesn't
+# use; see SPEC.md section 2 on the Vite-proxy dev setup).
 if FRONTEND_DIST.is_dir():
-    app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="frontend-assets")
-
-    @app.get("/{full_path:path}")
-    def serve_frontend(full_path: str) -> FileResponse:
-        candidate = FRONTEND_DIST / full_path
-        if full_path and candidate.is_file():
-            return FileResponse(candidate)
-        return FileResponse(FRONTEND_DIST / "index.html")
+    app.frontend("/", directory=FRONTEND_DIST, check_dir=False)
