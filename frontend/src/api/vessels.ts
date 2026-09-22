@@ -27,30 +27,15 @@ export function isVesselConflictDetail(detail: unknown): detail is VesselConflic
 export interface VesselListQuery {
   q?: string;
   includeInactive?: boolean;
-  /** "Recent" means within this many years of today, OR within this many
-   * years of the most recent booking in the whole dataset, whichever
-   * cutoff is earlier — computed server-side (app/api/vessels.py) so a
-   * historical import's own tail end still counts as recent even once
-   * the app is running years past the import's date range. */
-  recentYears?: number;
-  historical?: boolean;
 }
 
-export function useVessels(query: VesselListQuery = {}, options: { enabled?: boolean } = {}) {
+export function useVessels(query: VesselListQuery = {}) {
   return useQuery({
     queryKey: ["vessels", query],
-    enabled: options.enabled,
     queryFn: async () =>
       unwrap<Vessel[]>(
         await api.GET("/api/vessels", {
-          params: {
-            query: {
-              q: query.q,
-              include_inactive: query.includeInactive,
-              recent_years: query.recentYears,
-              historical: query.historical,
-            },
-          },
+          params: { query: { q: query.q, include_inactive: query.includeInactive } },
         }),
       ),
   });

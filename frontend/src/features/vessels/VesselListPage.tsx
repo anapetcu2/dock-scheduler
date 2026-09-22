@@ -3,56 +3,33 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { useOrganizations } from "../../api/organizations";
-import { type Vessel, useVessels } from "../../api/vessels";
+import { useVessels } from "../../api/vessels";
 import { EmptyState } from "../../components/EmptyState";
 import { ErrorState } from "../../components/ErrorState";
 import { LoadingState } from "../../components/LoadingState";
 
-type Tab = "recent" | "historical";
-const RECENT_YEARS = 2;
-
-function isFullyKnown(v: Vessel): boolean {
-  // Length is what actually matters for booking (a null loa_ft blocks a
-  // vessel booking outright — VESSEL_LENGTH_UNKNOWN in booking_rules.py);
-  // type_prefix is cosmetic and often left blank even for a perfectly
-  // usable vessel, so it isn't required here.
-  return v.loa_ft != null;
-}
+type Tab = "active" | "historical";
 
 export function VesselListPage() {
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<Tab>("recent");
+  const [tab, setTab] = useState<Tab>("active");
   const searching = query.trim() !== "";
 
-  // "Recent" is booked-in-the-last-N-years *and* has a known length — a
-  // vessel missing one never shows there, however recently it was booked,
-  // since a length-less vessel can't even be re-booked without fixing
-  // that first. It still needs to be visible *somewhere*, so anything
-  // that doesn't qualify as Recent falls through to Historical instead of
-  // disappearing — Historical is "everything else," not "everything
-  // booked long ago."
-  const { data: candidates, isPending: recentPending, isError: recentError, error: recentErr } =
-    useVessels({ recentYears: RECENT_YEARS, historical: false }, { enabled: !searching });
-  const { data: allVessels, isPending: allPending, isError: allError, error: allErr } = useVessels(
-    {},
-    { enabled: !searching && tab === "historical" },
-  );
-  const { data: searchResults, isPending: searchPending, isError: searchError, error: searchErr } =
-    useVessels({ q: query }, { enabled: searching });
+  const { data: allVessels, isPending, isError, error } = useVessels({
+    q: searching ? query : undefined,
+  });
 
-  const recentVessels = useMemo(() => (candidates ?? []).filter(isFullyKnown), [candidates]);
-  const historicalVessels = useMemo(() => {
-    const recentIds = new Set(recentVessels.map((v) => v.id));
-    return (allVessels ?? []).filter((v) => !recentIds.has(v.id));
-  }, [allVessels, recentVessels]);
+  // Split purely on whether the length is known — a vessel without one
+  // can't actually be booked (VESSEL_LENGTH_UNKNOWN blocks it), so it
+  // belongs with the rest of the data that needs attention before it's
+  // usable, regardless of how recently it was last booked historically.
+  const activeVessels = useMemo(() => (allVessels ?? []).filter((v) => v.loa_ft != null), [allVessels]);
+  const historicalVessels = useMemo(() => (allVessels ?? []).filter((v) => v.loa_ft == null), [allVessels]);
 
   const { data: organizations } = useOrganizations();
   const orgName = (id: number | null) => organizations?.find((o) => o.id === id)?.name ?? "—";
 
-  const vessels = searching ? searchResults : tab === "recent" ? recentVessels : historicalVessels;
-  const isPending = searching ? searchPending : tab === "recent" ? recentPending : recentPending || allPending;
-  const isError = searching ? searchError : tab === "recent" ? recentError : recentError || allError;
-  const error = searching ? searchErr : tab === "recent" ? recentErr : recentErr ?? allErr;
+  const vessels = searching ? allVessels : tab === "active" ? activeVessels : historicalVessels;
 
   return (
     <div>
@@ -69,11 +46,11 @@ export function VesselListPage() {
 
       {!searching && (
         <div className="mb-4 flex gap-1 border-b border-slate-200">
-          <TabButton active={tab === "recent"} onClick={() => setTab("recent")}>
-            Recent (last {RECENT_YEARS} years)
+          <TabButton active={tab === "active"} onClick={() => setTab("active")}>
+            Active ({activeVessels.length})
           </TabButton>
           <TabButton active={tab === "historical"} onClick={() => setTab("historical")}>
-            Historical
+            Historical, needs length ({historicalVessels.length})
           </TabButton>
         </div>
       )}
